@@ -2,7 +2,7 @@
 /////////aaaaa
 #include <queue>
 #include <string>
-
+#include <iostream>
 #include <fstream>
 #include <set>
 #include "clang/Frontend/FrontendPluginRegistry.h"
@@ -59,7 +59,7 @@ public:
 private:
 	CompilerInstance &Instance;
     ASTContext *context;
-
+    string localFunctionNameCollect="";
     void HandleDefine(Decl *D);
     void HandleOp(Stmt *S);
     void HandleCall(Stmt *S);
@@ -119,7 +119,10 @@ void ClangPluginASTVisitor::HandleDefine(Decl *D){
         string nameStr = varDecl -> getNameAsString();  // 变量名
         string typeStr = qualType.getAsString();  // 类型名
         string varname = HelpHandleVarDecl(varDecl);
-        unsigned int lineNum = ModGetDeclLine(varDecl);  // 行号        
+        unsigned int lineNum = ModGetDeclLine(varDecl);  // 行号   
+        if(isa<ParmVarDecl>(D)){//属于对函数参数的声明
+            llvm::errs() << lineNum << "," << "Define" << ",Parm," << varname << "," << typeStr << "\n";
+        }else
         llvm::errs() << lineNum << "," << "Define" << "," << varname << "," << typeStr << "\n";
         if(Expr *init = (Expr *)varDecl->getInit()){//获取等号右边的初始化信息
             
@@ -148,16 +151,20 @@ void ClangPluginASTVisitor::HandleDefine(Decl *D){
             }            
         }    
     }
-    else if(isa<FunctionDecl>(D)){//这里的是一个函数的声明，需要获取这个函数的名称，返回值的类型
-        //马梦雨的
-        //D->dump();
+    else if(isa<FunctionDecl>(D)){//这里的是一个函数的声明，需要获取这个函数的名称，返回值的类型        
+        
         VarDecl* varDecl = (VarDecl*)D;
         unsigned int lineNum = ModGetDeclLine(varDecl);
         FunctionDecl *FD = dyn_cast<FunctionDecl>(D);            
         string fname =  FD->getNameAsString();
+        if(FD->doesThisDeclarationHaveABody()){//如果这个函数声明带有函数体，则初步认为这是个本地的函数
+            localFunctionNameCollect += fname;
+            //D->dump();
+        }//else D->dump();
+        
         QualType returnType = (QualType)FD->getReturnType();           
         string typeStr = returnType.getAsString();  
-        llvm::errs()<<  lineNum << ",Define,FunctionDecl,"<< fname << "," << typeStr << "\n"; 
+        llvm::errs()<<  lineNum << ",Define,Function,"<< fname << "," << typeStr << "\n"; 
     }
 }
 
@@ -217,16 +224,18 @@ void ClangPluginASTVisitor::HandleCall(Stmt *S){//当前用于处理函数调用
     string directCallOrNot="";
     if(FunctionDecl *FD = CE->getDirectCallee()){
         //FD->dump();
-        directCallOrNot = "Direct,";
+        directCallOrNot += "Direct,";
         string functionName = FD->getNameAsString();
-        directCallOrNot +=  functionName;  
-        if (FD->isExternC()){//判断是否为外部函数，但存在问题，如果对于多个源文件的情况是否使用还需验证
+        directCallOrNot +=  functionName;          
+        std::size_t found = localFunctionNameCollect.find(functionName);//在本地函数集合中查找函数名，如果没有找到则判定为库函数
+        if(found==std::string::npos){//判断是否为外部函数，但存在问题，如果对于多个源文件的情况是否使用还需验证
+            //llvm::errs()<<"\n not found\n";
             directCallOrNot += ",Libc,Key";
         }      
     }        
     else{
         //S->dump();
-        directCallOrNot = "Indirect,Key";
+        directCallOrNot += "Indirect,Key";
     }
     if(args[args.size()-1]==',')
         args = args.substr(0,args.size()-1);
