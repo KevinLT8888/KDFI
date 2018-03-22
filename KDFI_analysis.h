@@ -90,11 +90,13 @@ private:
 
     ///////////////////////////
     // 添加函数声明：衣龙浩
-    template <class T1, class T2>
-    void getAllChilds(T1* root, queue<T2*>& q);
-    string concatStr(queue<DeclRefExpr*> q);
+    string concatStr(queue<Stmt*> q);
+    string getCondStr(Stmt* root);
+    queue<Stmt*> getAllChilds(Stmt* root);
+    queue<Stmt*> extractChilds(queue<Stmt*> q);
     unsigned ModGetDeclLine(Decl *D);
     unsigned ModGetDeclLine(Stmt *S);
+    set<IfStmt*> ifStmtSet;
     ///////////////////////////
     //高语涵
     string HandleSafeType(Stmt *);
@@ -110,8 +112,7 @@ private:
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void ClangPluginASTVisitor::HandleDefine(Decl *D){
-    //D->dump();
-    
+    //D->dump();    
     if(isa<VarDecl>(D)){
         //D->dump();
         VarDecl* varDecl = (VarDecl*)D;
@@ -260,42 +261,55 @@ void ClangPluginASTVisitor::HandleRet(Stmt *S){
 }
 
 void ClangPluginASTVisitor::HandleCond(Stmt *S){
-    //处理cond，条件分支的参数都是输入，也都是关键数据
-    //格式:line,cond,type ,{}<-{func@para1,func@para2}
-    //说明:行号，是条件分支，条件分支的具体类型(if,else,for,while,switch等) ，参数是para1和 para2等
     unsigned int lineNum = ModGetDeclLine(S);
     //处理cond，条件分支的参数都是输入，也都是关键数据
     //格式:line,cond,type ,{}<-{func@para1,func@para2}
     //说明:行号，是条件分支，条件分支的具体类型(if,else,for,while,switch等) ，参数是para1和 para2等
 	if(isa<IfStmt>(S)) {
         IfStmt* ifStmt = (IfStmt*)S;
-        //ifStmt -> dump();
-        Expr* expr = ifStmt -> getCond();
-        queue<DeclRefExpr*> declRefExprQueue;
-        getAllChilds(expr, declRefExprQueue);
-        string str = concatStr(declRefExprQueue);
-        llvm::errs() << lineNum  << "," << "Cond" << "," << "if" << ","  << str <<  ",Key\n";
+        if(ifStmtSet.count(ifStmt) == 0) {  // 还未访问过这个 IfStmt
+            Expr* expr = ifStmt -> getCond();
+            string str = getCondStr(expr);
+            llvm::errs() << lineNum  << "," << "cond" << "," << "if" << "," << "{}<-{" << str << "}" << "\n";
+            ifStmtSet.insert(ifStmt);  // 标记已访问
+            Stmt* elseIfStmtOrElseStmt = ifStmt -> getElse();
+            int lineNumElseIfOrElse = 0;
+            while(elseIfStmtOrElseStmt != NULL && isa<IfStmt>(elseIfStmtOrElseStmt)) {
+                lineNumElseIfOrElse = ModGetDeclLine(elseIfStmtOrElseStmt);
+                IfStmt* elseIfStmt = (IfStmt*)elseIfStmtOrElseStmt;
+                ifStmtSet.insert(elseIfStmt);  // 标记已经访问过了
+                Expr* expr = elseIfStmt -> getCond();
+                string str = getCondStr(expr);
+                llvm::errs() << lineNumElseIfOrElse  << "," << "cond" << "," << "else if" << "," << "{}<-{" << str << "}" << "\n";
+                elseIfStmtOrElseStmt = elseIfStmt -> getElse();
+            }
+            //if(dyn_cast<Stmt>(elseIfStmtOrElseStmt)) {
+            if(elseIfStmtOrElseStmt != NULL) {
+                lineNumElseIfOrElse = ModGetDeclLine(elseIfStmtOrElseStmt);
+                llvm::errs() << lineNumElseIfOrElse << "," << "cond" << "," << "else" << "\n";
+            }
+        }
     } else if(isa<ForStmt>(S)) {
         ForStmt* forStmt = (ForStmt*)S;
+        //forStmt -> dump();
         Expr* expr = forStmt -> getCond();
-        queue<DeclRefExpr*> declRefExprQueue;
-        getAllChilds(expr, declRefExprQueue);
-        string str = concatStr(declRefExprQueue);
-        llvm::errs() << lineNum << "," << "Cond" << "," << "for" << "," <<  str <<  ",Key\n";
+        //expr -> dump();
+        string str = getCondStr(expr);
+        llvm::errs() << lineNum << "," << "cond" << "," << "for" << "," << "{}<-{" << str << "}" << "\n";
     } else if(isa<WhileStmt>(S)) {
         WhileStmt* whileStmt = (WhileStmt*)S;
+        //whileStmt -> dump();
         Expr* expr = whileStmt -> getCond();
-        queue<DeclRefExpr*> declRefExprQueue;
-        getAllChilds(expr, declRefExprQueue);
-        string str = concatStr(declRefExprQueue);
-        llvm::errs() << lineNum << "," << "Cond" << "," << "while" << "," <<  str << ",Key\n";
+        //expr -> dump();
+        string str = getCondStr(expr);
+        llvm::errs() << lineNum << "," << "cond" << "," << "while" << "," << "{}<-{" << str << "}" << "\n";
     } else if(isa<SwitchStmt>(S)) {
         SwitchStmt* switchStmt = (SwitchStmt*)S;
+        //switchStmt -> dump();
         Expr* expr = switchStmt -> getCond();
-        queue<DeclRefExpr*> declRefExprQueue;
-        getAllChilds(expr, declRefExprQueue);
-        string str = concatStr(declRefExprQueue);
-        llvm::errs() << lineNum << "," << "Cond" << "," << "switch" << "," << str <<",Key\n";
+        //expr -> dump();
+        string str = getCondStr(expr);
+        llvm::errs() << lineNum << "," << "cond" << "," << "switch" << "," << "{}<-{" << str << "}" << "\n";
     }
 
 }
@@ -748,54 +762,110 @@ string ClangPluginASTVisitor::HelpGetStars(Expr *exp){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // 添加或修改函数：衣龙浩
 
+string ClangPluginASTVisitor::getCondStr(Stmt* root) {
+    queue<Stmt*> q1 = getAllChilds(root);
+    queue<Stmt*> q2 = extractChilds(q1);
+    return concatStr(q2);
+}
 
-string ClangPluginASTVisitor::concatStr(queue<DeclRefExpr*> q) {
+
+string ClangPluginASTVisitor::concatStr(queue<Stmt*> q) {
     string res = "";
     string nameStr = "";
     string funcStr = "";
+    string funcAndNameStr = "";  // func@name
+    vector<string> strsVec;
     while(!q.empty()) {
-        DeclRefExpr* temp = q.front();
-        ValueDecl* valueDecl = temp -> getDecl();
-        nameStr = valueDecl -> getNameAsString();  // 变量名
-        if(valueDecl -> isDefinedOutsideFunctionOrMethod()) {
-            // 全局变量
-            funcStr = "_Global_";
-        } else {
-            DeclContext* declContext = valueDecl -> getParentFunctionOrMethod();  // 获取作用域范围对应的函数定义
-            if(FunctionDecl* functionDecl = dyn_cast<FunctionDecl>(declContext)){
-                funcStr = functionDecl -> getNameAsString();  // 函数名
-            }
-        }
-        res += funcStr;
-        res += "@";
-        res += nameStr;
-        res += ",";
+        Stmt* temp = q.front();
         q.pop();  // 出队列
+        if(isa<IntegerLiteral>(temp) || isa<FloatingLiteral>(temp)) {
+            strsVec.push_back("imm");
+        } else if(isa<DeclRefExpr>(temp)) {  // DeclRefExpr
+            // 获取变量名
+            DeclRefExpr* declRefExpr = (DeclRefExpr*)temp;
+            ValueDecl* valueDecl = declRefExpr -> getDecl();
+            nameStr = valueDecl -> getNameAsString();
+            // 判断是全局变量还是局部变量
+            if(valueDecl -> isDefinedOutsideFunctionOrMethod()) {
+                // 全局变量对应的函数定义设定为 _global_
+                funcStr = "_global_";
+            } else {
+                // 获取作用域范围对应的函数定义
+                DeclContext* declContext = valueDecl -> getParentFunctionOrMethod();
+                // 获取函数名
+                if(FunctionDecl* functionDecl = dyn_cast<FunctionDecl>(declContext)){
+                    funcStr = functionDecl -> getNameAsString();
+                }
+            }
+            funcAndNameStr = funcStr + "@" + nameStr;
+            strsVec.push_back(funcAndNameStr);
+        }
+    }
+    // 拼接字符串
+    for(unsigned int i = 0; i < strsVec.size(); i++) {
+        res += strsVec[i];
+        res += ",";
     }
     res = res.substr(0, res.length() - 1); // 去掉最后一个多余的逗号
     return res;
 }
 
-template <class T1, class T2>
-void ClangPluginASTVisitor::getAllChilds(T1* root, queue<T2*>& q) {
-    queue<Stmt*> stmtQueue;
-    for(Stmt::child_iterator it = root -> child_begin(); it != root -> child_end(); ++it) {
-        Stmt* child = *it;
-        stmtQueue.push(child);
+
+queue<Stmt*> ClangPluginASTVisitor::getAllChilds(Stmt* root) {
+    queue<Stmt*> stmtQueue; // 最终要返回的队列
+    queue<Stmt*> stmtTempQueue;  // 临时队列
+    stmtTempQueue.push(root);  // 根节点入队
+    while(!stmtTempQueue.empty()) {
+        Stmt* temp = stmtTempQueue.front();
+        stmtTempQueue.pop();  // 出队列
+        stmtQueue.push(temp);  // 出了临时队列，则进入另一个队列永久保存
+        for(Stmt::child_iterator it = temp -> child_begin(); it != temp -> child_end(); ++it) {
+            Stmt* child = *it;
+            stmtTempQueue.push(child);
+        }
     }
-    while(!stmtQueue.empty()) {
-        Stmt* temp = stmtQueue.front();
-        stmtQueue.pop();
-        if(isa<T2>(temp)) {  // 如果是我们要的类型，加入队列
-            q.push((T2*)temp);
-        } else {
-            for(Stmt::child_iterator it = temp -> child_begin(); it != temp -> child_end(); ++it) {
-                Stmt* child = *it;
-                stmtQueue.push(child);
+    return stmtQueue;
+}
+
+
+queue<Stmt*> ClangPluginASTVisitor::extractChilds(queue<Stmt*> q) {
+    queue<Stmt*> stmtTempQueue;
+    queue<Stmt*> declRefExprQueue;
+    queue<Stmt*> returnQueue;
+    while(!q.empty()) {
+        Stmt* temp = q.front();
+        stmtTempQueue.push(temp);
+        q.pop(); // 出队列
+        if(isa<DeclRefExpr>(temp)) {
+            declRefExprQueue.push(temp);
+        }
+        //if(isa<ImplicitCastExpr>(temp) || isa<DeclRefExpr>(temp) || isa<IntegerLiteral>(temp) || isa<CallExpr>(temp)) {  // VarDecl
+        //    stmtExtractQueue.push(temp);
+        //}
+    }
+    int skipFlag = 0;
+    while(!stmtTempQueue.empty()) {
+        Stmt* temp = stmtTempQueue.front();
+        stmtTempQueue.pop();
+        if(isa<IntegerLiteral>(temp) || isa<FloatingLiteral>(temp)) {
+            returnQueue.push(temp);
+            if(isa<FloatingLiteral>(temp)) {
+                skipFlag = 1;
+            }
+        } else if(isa<ImplicitCastExpr>(temp)) {
+            if(skipFlag == 1) {
+                skipFlag = 0;
+                continue;
+            } else {
+                Stmt* declRefExpr = declRefExprQueue.front();
+                declRefExprQueue.pop();
+                returnQueue.push(declRefExpr);
             }
         }
     }
+    return returnQueue;
 }
+
 
 unsigned ClangPluginASTVisitor::ModGetDeclLine(Decl *D){
     //获取定义在源代码中的行号
@@ -815,6 +885,16 @@ unsigned ClangPluginASTVisitor::ModGetDeclLine(Stmt *S){
     else
         return 0;
 }
+
+
+
+
+
+
+
+
+
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 string ClangPluginASTVisitor::HelpHandleVarDecl(VarDecl * VD){
     //这个函数帮助获取变量定义的作用域和名称，只返回　作用域@变量名的格式。
