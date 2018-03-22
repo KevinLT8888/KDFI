@@ -1,5 +1,5 @@
 #pragma once
-
+/////////aaaaa
 #include <queue>
 #include <string>
 
@@ -659,6 +659,9 @@ string ClangPluginASTVisitor::HelpHandleFunctionCall(Expr *caller,bool printout)
     }
     return "Retfrom "+funname + ",";
 }
+
+
+//
 string ClangPluginASTVisitor::HelpAnalyzeLeftTree(Expr *root,string leftop){
     //这个函数用于分析在等号左边的参与指针运算的普通变量，将这些普通变量加入src中。
     //目前只处理常规变量的情况
