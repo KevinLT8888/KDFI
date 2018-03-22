@@ -219,7 +219,10 @@ void ClangPluginASTVisitor::HandleCall(Stmt *S){//当前用于处理函数调用
         //FD->dump();
         directCallOrNot = "Direct,";
         string functionName = FD->getNameAsString();
-        directCallOrNot +=  functionName;        
+        directCallOrNot +=  functionName;  
+        if (FD->isExternC()){//判断是否为外部函数，但存在问题，如果对于多个源文件的情况是否使用还需验证
+            directCallOrNot += ",Libc,Key";
+        }      
     }        
     else{
         //S->dump();
