@@ -86,8 +86,9 @@ private:
     string HelpGetType(Expr *);
     string HelpGetStars(Expr *);
     string HelpHandleVarDecl(VarDecl *);
-
-
+    void HelpHandleRecordDecl(Decl*);
+    string HelpCutTheLastComma(string);
+    string HelpHandleMemberExpr(MemberExpr *);
     ///////////////////////////
     // 添加函数声明：衣龙浩
     string concatStr(queue<Stmt*> q);
@@ -166,6 +167,9 @@ void ClangPluginASTVisitor::HandleDefine(Decl *D){
         QualType returnType = (QualType)FD->getReturnType();           
         string typeStr = returnType.getAsString();  
         llvm::errs()<<  lineNum << ",Define,Function,"<< fname << "," << typeStr << "\n"; 
+    }else if(isa<RecordDecl>(D)){
+        //这个是结构体或是联合的处理
+        HelpHandleRecordDecl(D);
     }
 }
 
@@ -372,6 +376,7 @@ string ClangPluginASTVisitor::HelpHandleDeclRefExpr(DeclRefExpr *e){
 }
 string ClangPluginASTVisitor::HelpGetDst(Expr* expr){
     //这个函数用于获取赋值操作等号左边的标的数据
+    
 	string leftop;
 	if(DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(expr)) //若赋值的结点的是变量
 		leftop = HelpHandleDeclRefExpr(DRE);    
@@ -414,8 +419,11 @@ string ClangPluginASTVisitor::HelpGetDst(Expr* expr){
 	else if(ArraySubscriptExpr *ASE = dyn_cast<ArraySubscriptExpr>(expr)){ //若赋值的结点是数组	
         leftop = HelpHandleArraySubsriptExpr(ASE);
 	}
+    else if(MemberExpr *ME = dyn_cast<MemberExpr>(expr)){
+        leftop = HelpHandleMemberExpr(ME);
+    }
 	return leftop;
-	}
+}
 string ClangPluginASTVisitor::HelpGetSrc(Expr* expl,Expr* expr,string leftop){
     //这个函数用于获取赋值操作中等号右边的源数据,但是等号左边的操作也会影响数据的来源分析，因此需要分析等号左边
     string src;
@@ -442,7 +450,7 @@ string ClangPluginASTVisitor::HelpGetSrc(Expr* expl,Expr* expr,string leftop){
 }
 string ClangPluginASTVisitor::HelpVisitRightTree(Expr * root){
     //这个函数用于访问等号右边出现的四则运算，可以处理多次运算，使用二叉树的后序遍历方法。 对于指针运算，最多处理两层   
-    string src = "";
+    string src = "";    
     if(isa<BinaryOperator>(root)){
         BinaryOperator *par = dyn_cast<BinaryOperator>(root);
         Expr *lchild = par -> getLHS();
@@ -514,6 +522,11 @@ string ClangPluginASTVisitor::HelpVisitRightTree(Expr * root){
         else if(isa<IntegerLiteral>(*(root->child_begin()))){
             src += "Imm,";
         }
+        else if(isa<MemberExpr>(*(root->child_begin()))){//进到这个判断条件中说名右边出现结构体成员
+            MemberExpr *ME = dyn_cast<MemberExpr>(*(root->child_begin()));
+            src += HelpHandleMemberExpr(ME);
+        }
+        
     }
     else if(isa<CallExpr>(root)){
         //llvm::errs()<<"Found a Function";
@@ -555,6 +568,7 @@ string ClangPluginASTVisitor::HelpVisitRightTree(Expr * root){
             src += HelpVisitRightTree(arg);
         }
     }
+    
     //else root->dump();
     return src;
 }
@@ -685,9 +699,6 @@ string ClangPluginASTVisitor::HelpHandleFunctionCall(Expr *caller,bool printout)
     }
     return "Retfrom "+funname + ",";
 }
-
-
-//
 string ClangPluginASTVisitor::HelpAnalyzeLeftTree(Expr *root,string leftop){
     //这个函数用于分析在等号左边的参与指针运算的普通变量，将这些普通变量加入src中。
     //目前只处理常规变量的情况
@@ -737,6 +748,9 @@ string ClangPluginASTVisitor::HelpHandleArraySubsriptExpr(Expr *ASE){//这个函
         if(DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(*(ICE->child_begin()))){
             arrayname = HelpHandleDeclRefExpr(DRE);
         }
+        else if(MemberExpr *ME = dyn_cast<MemberExpr>(*(ICE->child_begin()))){//进入到这个条件说明这个数组是一个结构体成员
+            arrayname = HelpHandleMemberExpr(ME);
+        }
     }
     return arrayname + "[]";
 }
@@ -755,20 +769,13 @@ string ClangPluginASTVisitor::HelpGetStars(Expr *exp){
     if(type == "char *") return "*";
     return stars;
 }
-
-
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // 添加或修改函数：衣龙浩
-
 string ClangPluginASTVisitor::getCondStr(Stmt* root) {
     queue<Stmt*> q1 = getAllChilds(root);
     queue<Stmt*> q2 = extractChilds(q1);
     return concatStr(q2);
 }
-
-
 string ClangPluginASTVisitor::concatStr(queue<Stmt*> q) {
     string res = "";
     string nameStr = "";
@@ -809,8 +816,6 @@ string ClangPluginASTVisitor::concatStr(queue<Stmt*> q) {
     res = res.substr(0, res.length() - 1); // 去掉最后一个多余的逗号
     return res;
 }
-
-
 queue<Stmt*> ClangPluginASTVisitor::getAllChilds(Stmt* root) {
     queue<Stmt*> stmtQueue; // 最终要返回的队列
     queue<Stmt*> stmtTempQueue;  // 临时队列
@@ -826,8 +831,6 @@ queue<Stmt*> ClangPluginASTVisitor::getAllChilds(Stmt* root) {
     }
     return stmtQueue;
 }
-
-
 queue<Stmt*> ClangPluginASTVisitor::extractChilds(queue<Stmt*> q) {
     queue<Stmt*> stmtTempQueue;
     queue<Stmt*> declRefExprQueue;
@@ -865,8 +868,6 @@ queue<Stmt*> ClangPluginASTVisitor::extractChilds(queue<Stmt*> q) {
     }
     return returnQueue;
 }
-
-
 unsigned ClangPluginASTVisitor::ModGetDeclLine(Decl *D){
     //获取定义在源代码中的行号
     FullSourceLoc fsl = context->getFullLoc(D->getLocStart());
@@ -875,8 +876,6 @@ unsigned ClangPluginASTVisitor::ModGetDeclLine(Decl *D){
     else
         return 0;
 }
-
-
 unsigned ClangPluginASTVisitor::ModGetDeclLine(Stmt *S){
     //获取定义在源代码中的行号
     FullSourceLoc fsl = context->getFullLoc(S->getLocStart());
@@ -885,16 +884,6 @@ unsigned ClangPluginASTVisitor::ModGetDeclLine(Stmt *S){
     else
         return 0;
 }
-
-
-
-
-
-
-
-
-
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 string ClangPluginASTVisitor::HelpHandleVarDecl(VarDecl * VD){
     //这个函数帮助获取变量定义的作用域和名称，只返回　作用域@变量名的格式。
@@ -912,8 +901,6 @@ string ClangPluginASTVisitor::HelpHandleVarDecl(VarDecl * VD){
     }
     return "";
 }
-
-
 
 ///////////////////////////////////////
 //GYH
@@ -1064,4 +1051,44 @@ string ClangPluginASTVisitor::HelpGetSrcST(Expr * root){
         Styper += HelpGetSrcST(CONTENT);
     }
     return Styper;
+}
+//===================================================================================================
+void ClangPluginASTVisitor::HelpHandleRecordDecl(Decl *D){
+    unsigned int lineNum = ModGetDeclLine(D);
+    //D -> dump();
+    RecordDecl *RD = dyn_cast<RecordDecl>(D);
+    string name = RD -> getNameAsString();
+    string type = "";
+    string fields = "";
+    if( RD -> getTagKind() == TTK_Struct ){
+        type = "Struct";
+    }
+    if( RD-> getTagKind() == TTK_Union ){
+        type = "Union";
+    }
+    for(RecordDecl::field_iterator it = RD -> field_begin(); it != RD -> field_end(); ++it) {
+        //it->dump();
+        FieldDecl* field = *it;                
+        string fieldName = field -> getNameAsString();
+        QualType qualType = field->getType();
+        string typeStr = qualType.getAsString();
+        fields += fieldName + "#"+ typeStr + ",";         
+    }
+    fields = HelpCutTheLastComma(fields);
+    llvm::errs()<< lineNum <<",Define,"<< type <<","<< name <<","<<"Fields:"<< fields <<"\n";
+}
+string ClangPluginASTVisitor::HelpCutTheLastComma(string src){
+    if(src[src.size()-1]==',')
+        src = src.substr(0,src.size()-1);
+    return src;
+}
+string ClangPluginASTVisitor::HelpHandleMemberExpr(MemberExpr *ME){//这个函数用于处理对结构体成语的赋值，获取格式函数＠结构体名称＃成员名称
+    string baseName = "";
+    ValueDecl *VD = ME->getMemberDecl();
+    string memberName = VD->getNameAsString();
+    if(DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(*(ME->child_begin()))){
+        //DRE->dump();
+        baseName += HelpHandleDeclRefExpr(DRE);
+    }
+    return baseName+"#"+memberName;
 }
