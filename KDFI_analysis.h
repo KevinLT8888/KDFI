@@ -524,7 +524,7 @@ string ClangPluginASTVisitor::HelpVisitRightTree(Expr * root){
         }
         else if(isa<MemberExpr>(*(root->child_begin()))){//进到这个判断条件中说名右边出现结构体成员
             MemberExpr *ME = dyn_cast<MemberExpr>(*(root->child_begin()));
-            src += HelpHandleMemberExpr(ME);
+            src += HelpHandleMemberExpr(ME)+",";
         }
         
     }
