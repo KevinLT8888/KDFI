@@ -29,6 +29,7 @@ public:
 	}
 	bool VisitDecl(Decl *D){
 		//对每个Decl结点分析
+        //D->dump();
         HandleDefine(D);
 		return true;
 	}
@@ -89,6 +90,10 @@ private:
     void HelpHandleRecordDecl(Decl*);
     string HelpCutTheLastComma(string);
     string HelpHandleMemberExpr(MemberExpr *);
+
+
+
+    string HelpHandleIfStmt(IfStmt *);
     ///////////////////////////
     // 添加函数声明：衣龙浩
     string concatStr(queue<Stmt*> q);
@@ -127,9 +132,11 @@ void ClangPluginASTVisitor::HandleDefine(Decl *D){
         }else
         llvm::errs() << lineNum << "," << "Define" << "," << varname << "," << typeStr << "\n";
         if(Expr *init = (Expr *)varDecl->getInit()){//获取等号右边的初始化信息
-            
+
             if(isa<BinaryOperator>(init) || isa<UnaryOperator>(init)){ //操作结点
-                HandleOp(init);
+                string src = HelpVisitRightTree(init);
+                src = HelpCutTheLastComma(src);
+                llvm::errs()<< lineNum << ",op {" << varname  << "}<-{"<< src << "}\n";
             }
             else if(isa<CallExpr>(init)){ //函数调用结点
                 HandleCall(init);
@@ -159,14 +166,21 @@ void ClangPluginASTVisitor::HandleDefine(Decl *D){
         unsigned int lineNum = ModGetDeclLine(varDecl);
         FunctionDecl *FD = dyn_cast<FunctionDecl>(D);            
         string fname =  FD->getNameAsString();
-        if(FD->doesThisDeclarationHaveABody()){//如果这个函数声明带有函数体，则初步认为这是个本地的函数
-            localFunctionNameCollect += fname;
-            //D->dump();
-        }//else D->dump();
-        
+
         QualType returnType = (QualType)FD->getReturnType();           
         string typeStr = returnType.getAsString();  
-        llvm::errs()<<  lineNum << ",Define,Function,"<< fname << "," << typeStr << "\n"; 
+        //if()
+        if(FD->doesThisDeclarationHaveABody()){//如果这个函数声明带有函数体，则初步认为这是个本地的函数
+            localFunctionNameCollect += fname;
+            llvm::errs()<<  lineNum << ",Define,FunctionDefine,"<< fname << "," << typeStr << "\n";
+            //D->dump();
+        }//else D->dump();
+        else{//说名这个函数仅仅是一次声明，没有定义
+            llvm::errs()<<  lineNum << ",Define,FunctionDeclare,"<< fname << "," << typeStr << "\n"; 
+        }
+
+
+        
     }else if(isa<RecordDecl>(D)){
         //这个是结构体或是联合的处理
         HelpHandleRecordDecl(D);
@@ -191,7 +205,8 @@ void ClangPluginASTVisitor::HandleOp(Stmt *S){
 		    //llvm::errs() << "This is an assign\n";	
             FullSourceLoc fsl = context->getFullLoc(BO->getLocStart());
 		    if (fsl.isValid()){			    
-			    unsigned linenumber = fsl.getSpellingLineNumber(); //获取行数
+			    //unsigned linenumber = fsl.getSpellingLineNumber(); //获取行数
+                unsigned linenumber = fsl.getExpansionLineNumber();
 			    Expr *exprl = BO->getLHS(); //获取左子树，即赋值的结点
 			    string dst;
                 dst = HelpGetDst(exprl);//获取左边的变量名
@@ -244,7 +259,9 @@ void ClangPluginASTVisitor::HandleCall(Stmt *S){//当前用于处理函数调用
     }
     if(args[args.size()-1]==',')
         args = args.substr(0,args.size()-1);
-    llvm::errs()<<linenumber<<",Call,"<< directCallOrNot << ",Para{"<<args<<"}\n";    
+    llvm::errs()<<linenumber<<",Call,"<< directCallOrNot << ",Para{"<<args<<"}\n";
+    llvm::errs()<<linenumber<< ",Call,Stack <- Address, Key\n";    
+
 }
 
 void ClangPluginASTVisitor::HandleRet(Stmt *S){
@@ -261,7 +278,8 @@ void ClangPluginASTVisitor::HandleRet(Stmt *S){
         retStr += "void";
     if(retStr[retStr.size()-1]==',')
         retStr = retStr.substr(0,retStr.size()-1);
-    llvm::errs()<< linenumber << ",Ret,{}<-{"<< retStr << "}\n";
+    llvm::errs()<< linenumber << ",Ret,{}<-{"<< retStr << "}, Address <- Stack, Key\n";
+    llvm::errs()<< linenumber << ",Ret, Address <- Stack, Key\n";
 }
 
 void ClangPluginASTVisitor::HandleCond(Stmt *S){
@@ -270,50 +288,58 @@ void ClangPluginASTVisitor::HandleCond(Stmt *S){
     //格式:line,cond,type ,{}<-{func@para1,func@para2}
     //说明:行号，是条件分支，条件分支的具体类型(if,else,for,while,switch等) ，参数是para1和 para2等
 	if(isa<IfStmt>(S)) {
-        IfStmt* ifStmt = (IfStmt*)S;
-        if(ifStmtSet.count(ifStmt) == 0) {  // 还未访问过这个 IfStmt
-            Expr* expr = ifStmt -> getCond();
-            string str = getCondStr(expr);
-            llvm::errs() << lineNum  << "," << "cond" << "," << "if" << "," << "{}<-{" << str << "}" << "\n";
-            ifStmtSet.insert(ifStmt);  // 标记已访问
-            Stmt* elseIfStmtOrElseStmt = ifStmt -> getElse();
-            int lineNumElseIfOrElse = 0;
-            while(elseIfStmtOrElseStmt != NULL && isa<IfStmt>(elseIfStmtOrElseStmt)) {
-                lineNumElseIfOrElse = ModGetDeclLine(elseIfStmtOrElseStmt);
-                IfStmt* elseIfStmt = (IfStmt*)elseIfStmtOrElseStmt;
-                ifStmtSet.insert(elseIfStmt);  // 标记已经访问过了
-                Expr* expr = elseIfStmt -> getCond();
-                string str = getCondStr(expr);
-                llvm::errs() << lineNumElseIfOrElse  << "," << "cond" << "," << "else if" << "," << "{}<-{" << str << "}" << "\n";
-                elseIfStmtOrElseStmt = elseIfStmt -> getElse();
-            }
-            //if(dyn_cast<Stmt>(elseIfStmtOrElseStmt)) {
-            if(elseIfStmtOrElseStmt != NULL) {
-                lineNumElseIfOrElse = ModGetDeclLine(elseIfStmtOrElseStmt);
-                llvm::errs() << lineNumElseIfOrElse << "," << "cond" << "," << "else" << "\n";
-            }
-        }
+        //S->dump();
+        //IfStmt* ifStmt = (IfStmt*)S;
+        //if(ifStmtSet.count(ifStmt) == 0) {  // 还未访问过这个 IfStmt
+        //    Expr* expr = ifStmt -> getCond();
+        //    string str = getCondStr(expr);
+        //    llvm::errs() << lineNum  << "," << "cond" << "," << "if" << "," << "{}<-{" << str << "}" << "\n";
+        //    ifStmtSet.insert(ifStmt);  // 标记已访问
+        //    Stmt* elseIfStmtOrElseStmt = ifStmt -> getElse();
+        //    int lineNumElseIfOrElse = 0;
+        //    while(elseIfStmtOrElseStmt != NULL && isa<IfStmt>(elseIfStmtOrElseStmt)) {
+        //        lineNumElseIfOrElse = ModGetDeclLine(elseIfStmtOrElseStmt);
+        //        IfStmt* elseIfStmt = (IfStmt*)elseIfStmtOrElseStmt;
+        //        ifStmtSet.insert(elseIfStmt);  // 标记已经访问过了
+        //        Expr* expr = elseIfStmt -> getCond();
+        //        string str = getCondStr(expr);
+        //        llvm::errs() << lineNumElseIfOrElse  << "," << "cond" << "," << "else if" << "," << "{}<-{" << str << "}" << "\n";
+        //        elseIfStmtOrElseStmt = elseIfStmt -> getElse();
+        //    }
+        //    //if(dyn_cast<Stmt>(elseIfStmtOrElseStmt)) {
+        //    if(elseIfStmtOrElseStmt != NULL) {
+        //        lineNumElseIfOrElse = ModGetDeclLine(elseIfStmtOrElseStmt);
+        //        llvm::errs() << lineNumElseIfOrElse << "," << "cond" << "," << "else" << "\n";
+        //    }
+        //}
+        IfStmt *ifStmt = dyn_cast<IfStmt>(S);
+        string str = HelpHandleIfStmt(ifStmt);
+        
+        
     } else if(isa<ForStmt>(S)) {
+        string str;
         ForStmt* forStmt = (ForStmt*)S;
         //forStmt -> dump();
-        Expr* expr = forStmt -> getCond();
-        //expr -> dump();
-        string str = getCondStr(expr);
-        llvm::errs() << lineNum << "," << "cond" << "," << "for" << "," << "{}<-{" << str << "}" << "\n";
+        if(Expr* expr = forStmt -> getCond()){
+            str = getCondStr(expr);                
+        //expr -> dump();        
+            llvm::errs() << lineNum << "," << "cond" << "," << "FOR" << "," << "{}<-{" << str << "}" << ",　Key\n";
+        }
+        else llvm::errs() << lineNum << "," << "cond" << "," << "FOR" << "," << "{}<-{" << str << "}" << "\n";
     } else if(isa<WhileStmt>(S)) {
         WhileStmt* whileStmt = (WhileStmt*)S;
         //whileStmt -> dump();
         Expr* expr = whileStmt -> getCond();
         //expr -> dump();
         string str = getCondStr(expr);
-        llvm::errs() << lineNum << "," << "cond" << "," << "while" << "," << "{}<-{" << str << "}" << "\n";
+        llvm::errs() << lineNum << "," << "cond" << "," << "WHILE" << "," << "{}<-{" << str << "}" << ",　Key\n";
     } else if(isa<SwitchStmt>(S)) {
         SwitchStmt* switchStmt = (SwitchStmt*)S;
         //switchStmt -> dump();
         Expr* expr = switchStmt -> getCond();
         //expr -> dump();
         string str = getCondStr(expr);
-        llvm::errs() << lineNum << "," << "cond" << "," << "switch" << "," << "{}<-{" << str << "}" << "\n";
+        llvm::errs() << lineNum << "," << "cond" << "," << "SWITCH" << "," << "{}<-{" << str << "}" << ",　Key\n";
     }
 
 }
@@ -545,6 +571,10 @@ string ClangPluginASTVisitor::HelpVisitRightTree(Expr * root){
             if(DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(*(UO->child_begin()))){
                 src += "&" + HelpHandleDeclRefExpr(DRE);
             }
+        }
+        else if(UO->getOpcode()==UO_LNot){//发现!操作
+            if(Expr *expr = dyn_cast<Expr>(*(UO->child_begin())))
+                src += HelpVisitRightTree(expr);            
         }
     }
     else if(isa<ParenExpr>(root)){//碰到了括号，则将括号中的内容取出，继续递归
@@ -872,7 +902,7 @@ unsigned ClangPluginASTVisitor::ModGetDeclLine(Decl *D){
     //获取定义在源代码中的行号
     FullSourceLoc fsl = context->getFullLoc(D->getLocStart());
     if(fsl.isValid())
-        return fsl.getSpellingLineNumber();
+        return fsl.getExpansionLineNumber();
     else
         return 0;
 }
@@ -1091,4 +1121,20 @@ string ClangPluginASTVisitor::HelpHandleMemberExpr(MemberExpr *ME){//这个函�
         baseName += HelpHandleDeclRefExpr(DRE);
     }
     return baseName+"#"+memberName;
+}
+string ClangPluginASTVisitor::HelpHandleIfStmt(IfStmt *ifStmt){//这个函数负责处理if语句，判断是否有else，将判断条件打印
+
+    unsigned lineNum = ModGetDeclLine(ifStmt);  
+    Expr* condition = ifStmt -> getCond();
+
+    string conStr = HelpVisitRightTree(condition);
+    if (conStr == "")
+        condition->dump();
+    conStr = HelpCutTheLastComma(conStr);
+    llvm::errs()<< lineNum << ",cond, IF{}<-{"<< conStr  << "},　Key\n"; 
+    if(Stmt* els = ifStmt -> getElse()){
+        unsigned elseLineNum = ModGetDeclLine(els);
+        llvm::errs()<< elseLineNum << ",cond, Else\n"; 
+    }
+    return "";
 }
