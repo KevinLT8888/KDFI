@@ -211,10 +211,12 @@ void ClangPluginASTVisitor::HandleOp(Stmt *S){
 			    string dst;
                 dst = HelpGetDst(exprl);//获取左边的变量名
 			    llvm::errs() <<  linenumber << ",op,{" << dst << "}<-{";
-			    string src;                
+			    string src="";                
                 Expr *exprr = BO->getRHS();//获取右子树
                 src = HelpGetSrc(exprl,exprr,dst);//获取右侧的数据来源
                 //如果src以逗号结束，则去掉这个逗号。
+                if(src =="") //如果返回的结果为空，则打印出这个节点
+                    exprr -> dump();
                 if(src[src.size()-1]==',')
                     src = src.substr(0,src.size()-1);                
                 //string safeOrNot = HandleSafeType(S);
@@ -1128,7 +1130,7 @@ string ClangPluginASTVisitor::HelpHandleIfStmt(IfStmt *ifStmt){//这个函数负
     Expr* condition = ifStmt -> getCond();
 
     string conStr = HelpVisitRightTree(condition);
-    if (conStr == "")
+    if (conStr == "")//出现了if的判断条件不识别的情况
         condition->dump();
     conStr = HelpCutTheLastComma(conStr);
     llvm::errs()<< lineNum << ",cond, IF{}<-{"<< conStr  << "},　Key\n"; 
