@@ -28,16 +28,15 @@ public:
 	}
 	bool VisitDecl(Decl *D){
 		//对每个Decl结点分析
-        //D->dump();
+        D->dump();
         HandleDefine(D);
 		return true;
 	}
 	bool VisitStmt(Stmt *S){
 		//对每个Stmt结点分析
         if(isa<BinaryOperator>(S) || isa<UnaryOperator>(S)){ //操作结点
-            HandleOp(S);
-            
-            //llvm::errs()<< safeornot;
+            //S->dump();
+            HandleOp(S);                        
         }
         else if(isa<CallExpr>(S)){ //函数调用结点
             HandleCall(S);
@@ -315,7 +314,7 @@ void ClangPluginASTVisitor::HandleCond(Stmt *S){
             }
     } else if(isa<WhileStmt>(S)) {
         WhileStmt* whileStmt = (WhileStmt*)S;
-        whileStmt -> dump();
+        //whileStmt -> dump();
         Expr* expr = whileStmt -> getCond();
         //expr -> dump();
         string str = getCondStr(expr);
@@ -329,6 +328,12 @@ void ClangPluginASTVisitor::HandleCond(Stmt *S){
         string str = getCondStr(expr);
         output_data  << lineNum << "," << "cond" << "," << "SWITCH" << "," << "{}<-{" << str << "}" << ",　Key\n";
         llvm::errs() << lineNum << "," << "cond" << "," << "SWITCH" << "," << "{}<-{" << str << "}" << ",　Key\n";
+    } else if(isa<DoStmt>(S)){
+        DoStmt* doStmt = dyn_cast<DoStmt>(S);
+        Expr* expr = doStmt -> getCond();
+        string str = getCondStr(expr);
+        output_data  << lineNum << "," << "cond" << "," << "DO" << "," << "{}<-{" << str << "}" << ",　Key\n";
+        llvm::errs() << lineNum << "," << "cond" << "," << "DO" << "," << "{}<-{" << str << "}" << ",　Key\n";
     }
     output_data.close();    
 }
@@ -595,6 +600,16 @@ string ClangPluginASTVisitor::HelpVisitRightTree(Expr * root){
         else{
             Expr *arg = UEOTTE -> getArgumentExpr();
             src += HelpVisitRightTree(arg);
+        }
+    }
+    else if(CStyleCastExpr *CSCE = dyn_cast<CStyleCastExpr>(root)){
+        if(isa<ParenExpr>(*(CSCE->child_begin()))){
+            ParenExpr *PE = dyn_cast<ParenExpr>(*(CSCE -> child_begin()));
+            src += HelpVisitRightTree(PE);
+        }
+        else {
+            Expr *expr = dyn_cast<Expr>(*(CSCE->child_begin()));
+            src += HelpVisitRightTree(expr);
         }
     }
     
