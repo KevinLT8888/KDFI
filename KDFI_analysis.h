@@ -28,7 +28,7 @@ public:
 	}
 	bool VisitDecl(Decl *D){
 		//对每个Decl结点分析
-        D->dump();
+        //D->dump();
         HandleDefine(D);
 		return true;
 	}
@@ -486,7 +486,7 @@ string ClangPluginASTVisitor::HelpVisitRightTree(Expr * root){
         if(DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(*(root->child_begin()))){
             src += HelpHandleDeclRefExpr(DRE) + ",";
         }
-        if(UnaryOperator *UO = dyn_cast<UnaryOperator>(*(root->child_begin()))){              
+        else if(UnaryOperator *UO = dyn_cast<UnaryOperator>(*(root->child_begin()))){              
             if(ParenExpr *PE = dyn_cast<ParenExpr>(*(UO->child_begin()))){                
                 if (BinaryOperator *BO1 = dyn_cast<BinaryOperator>(*(PE->child_begin()))){                    
                     BinaryOperator *par = dyn_cast<BinaryOperator>(BO1);
@@ -519,7 +519,7 @@ string ClangPluginASTVisitor::HelpVisitRightTree(Expr * root){
                 }
             }
         }
-        if(ArraySubscriptExpr *ASE = dyn_cast<ArraySubscriptExpr>(*(root->child_begin()))){
+        else if(ArraySubscriptExpr *ASE = dyn_cast<ArraySubscriptExpr>(*(root->child_begin()))){
             src += HelpHandleArraySubsriptExpr(ASE)+",";
             if(Expr* Idx = ASE->getIdx()){
                 //获取到了这个数组的索引信息，也就是方括号里面的内容，方括号里面的也可能是一个操作式，需要树状分析
@@ -550,10 +550,15 @@ string ClangPluginASTVisitor::HelpVisitRightTree(Expr * root){
             MemberExpr *ME = dyn_cast<MemberExpr>(*(root->child_begin()));
             src += HelpHandleMemberExpr(ME)+",";
         }
-        else if(isa<ParenExpr>(*(root->child_begin()))){
+        else if(isa<ParenExpr>(*(root->child_begin()))){            
             ParenExpr *PE = dyn_cast<ParenExpr>(*(root->child_begin()));
             if(DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(*(PE->child_begin()))){
                 src += HelpHandleDeclRefExpr(DRE) + ",";
+            }else{
+                //llvm::errs()<<"hhhh\n\n";
+                Expr *expr = dyn_cast<Expr>(*(PE->child_begin()));
+                //if(isa)
+                src += HelpVisitRightTree(expr);
             }            
         }
         
@@ -579,6 +584,9 @@ string ClangPluginASTVisitor::HelpVisitRightTree(Expr * root){
         else if(UO->getOpcode()==UO_LNot){//发现!操作
             if(Expr *expr = dyn_cast<Expr>(*(UO->child_begin())))
                 src += HelpVisitRightTree(expr);            
+        }else {
+            if(Expr *expr = dyn_cast<Expr>(*(UO->child_begin())))
+                src += HelpVisitRightTree(expr);
         }
     }
     else if(isa<ParenExpr>(root)){//碰到了括号，则将括号中的内容取出，继续递归
@@ -612,7 +620,14 @@ string ClangPluginASTVisitor::HelpVisitRightTree(Expr * root){
             src += HelpVisitRightTree(expr);
         }
     }
-    
+    else if(ArraySubscriptExpr *ASE = dyn_cast<ArraySubscriptExpr>(root)){
+        src += HelpHandleArraySubsriptExpr(ASE)+",";
+    //    src += HelpHandleArraySubsriptExpr(ASE)+",";
+        if(Expr* Idx = ASE->getIdx()){
+    //        //获取到了这个数组的索引信息，也就是方括号里面的内容，方括号里面的也可能是一个操作式，需要树状分析
+            src += HelpVisitRightTree(Idx);
+        }
+    }    
     //else root->dump();
     return src;
 }
@@ -930,7 +945,7 @@ unsigned ClangPluginASTVisitor::ModGetDeclLine(Stmt *S){
     //获取定义在源代码中的行号
     FullSourceLoc fsl = context->getFullLoc(S->getLocStart());
     if(fsl.isValid())
-        return fsl.getSpellingLineNumber();
+        return fsl.getExpansionLineNumber();
     else
         return 0;
 }
@@ -1149,8 +1164,8 @@ string ClangPluginASTVisitor::HelpHandleIfStmt(IfStmt *ifStmt){//这个函数负
     //output_data.open("testout.txt",ios::app);
     unsigned lineNum = ModGetDeclLine(ifStmt);  
     Expr* condition = ifStmt -> getCond();
-
-    string conStr = HelpVisitRightTree(condition);
+    string conStr = "";
+    conStr += HelpVisitRightTree(condition);
     if (conStr == "")//出现了if的判断条件不识别的情况
         condition->dump();
     conStr = HelpCutTheLastComma(conStr);
