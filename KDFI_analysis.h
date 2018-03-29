@@ -284,8 +284,8 @@ void ClangPluginASTVisitor::HandleRet(Stmt *S){
         retStr = retStr.substr(0,retStr.size()-1);
     output_data << linenumber << ",Ret,{}<-{"<< retStr << "}, Address <- Stack, Key\n";
     llvm::errs()<< linenumber << ",Ret,{}<-{"<< retStr << "}, Address <- Stack, Key\n";
-    output_data << linenumber << ",Ret, Address <- Stack, Key\n";
-    llvm::errs()<< linenumber << ",Ret, Address <- Stack, Key\n";
+    //output_data << linenumber << ",Ret, Address <- Stack, Key\n";
+    //llvm::errs()<< linenumber << ",Ret, Address <- Stack, Key\n";
     output_data.close();    
 }
 void ClangPluginASTVisitor::HandleCond(Stmt *S){
@@ -439,6 +439,7 @@ string ClangPluginASTVisitor::HelpGetDst(Expr* expr){
         leftop = HelpHandleArraySubsriptExpr(ASE);
 	}
     else if(MemberExpr *ME = dyn_cast<MemberExpr>(expr)){
+        //expr->dump();
         leftop = HelpHandleMemberExpr(ME);
     }
     else if(ParenExpr *PE = dyn_cast<ParenExpr>(expr)){
@@ -454,6 +455,10 @@ string ClangPluginASTVisitor::HelpGetSrc(Expr* expl,Expr* expr,string leftop){
     string funname;
     //expr->dump();
     src = HelpVisitRightTree(expr);
+    if(src ==""){
+        expr->dump();
+    }
+        
     if(UnaryOperator *LUO = dyn_cast<UnaryOperator>(expl)){
         if(isa<ParenExpr>(*(LUO->child_begin()))){//等号左边出现*(p+i)的情况，说明需要继续分析
             src += HelpAnalyzeLeftTree(LUO,leftop);
@@ -579,6 +584,10 @@ string ClangPluginASTVisitor::HelpVisitRightTree(Expr * root){
         if(UO->getOpcode()==UO_AddrOf){//在普通的单操作中发现＆操作
             if(DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(*(UO->child_begin()))){
                 src += "&" + HelpHandleDeclRefExpr(DRE);
+            }
+            else if(ParenExpr *PE = dyn_cast<ParenExpr>(*(UO->child_begin()))){
+                Expr *content = dyn_cast<Expr>(*(PE->child_begin()));
+                src += "&" + HelpVisitRightTree(content);
             }
         }
         else if(UO->getOpcode()==UO_LNot){//发现!操作
@@ -1157,8 +1166,22 @@ string ClangPluginASTVisitor::HelpHandleMemberExpr(MemberExpr *ME){//这个函�
     if(DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(*(ME->child_begin()))){
         //DRE->dump();
         baseName += HelpHandleDeclRefExpr(DRE);
+    }else if (ImplicitCastExpr *ICE = dyn_cast<ImplicitCastExpr>(*(ME->child_begin()))){
+        if(DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(*(ICE->child_begin()))){
+            baseName += HelpHandleDeclRefExpr(DRE);
+        }else if(MemberExpr *ME = dyn_cast<MemberExpr>(*(ICE->child_begin()))){
+            baseName += HelpHandleMemberExpr(ME);
+        }
+        
+    }else if(MemberExpr *NME = dyn_cast<MemberExpr>(*(ME->child_begin()))){
+        baseName += HelpHandleMemberExpr(NME);
+    }else if(ArraySubscriptExpr *ASE = dyn_cast<ArraySubscriptExpr>(*(ME->child_begin()))){
+        baseName += HelpHandleArraySubsriptExpr(ASE);
     }
-    return baseName+"#"+memberName;
+    if(baseName==""){//空返回输出
+        ME->dump();
+    }
+    return baseName+"->"+memberName;
 }
 string ClangPluginASTVisitor::HelpHandleIfStmt(IfStmt *ifStmt){//这个函数负责处理if语句，判断是否有else，将判断条件打印
     //output_data.open("testout.txt",ios::app);
