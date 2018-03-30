@@ -1,0 +1,724 @@
+315,Define,_Global_@_IO_2_1_stdin_,struct _IO_FILE_plus
+316,Define,_Global_@_IO_2_1_stdout_,struct _IO_FILE_plus
+317,Define,_Global_@_IO_2_1_stderr_,struct _IO_FILE_plus
+333,Define,Parm,_Global_@__cookie,void *
+333,Define,Parm,_Global_@__buf,char *
+333,Define,Parm,_Global_@__nbytes,size_t
+341,Define,Parm,_Global_@__cookie,void *
+341,Define,Parm,_Global_@__buf,const char *
+342,Define,Parm,_Global_@__n,size_t
+350,Define,Parm,_Global_@__cookie,void *
+350,Define,Parm,_Global_@__pos,__off64_t *
+350,Define,Parm,_Global_@__w,int
+353,Define,Parm,_Global_@__cookie,void *
+385,Define,FunctionDeclare,__underflow,int
+385,Define,Parm,__underflow@,_IO_FILE *
+386,Define,FunctionDeclare,__uflow,int
+386,Define,Parm,__uflow@,_IO_FILE *
+387,Define,FunctionDeclare,__overflow,int
+387,Define,Parm,__overflow@,_IO_FILE *
+387,Define,Parm,__overflow@,int
+429,Define,FunctionDeclare,_IO_getc,int
+429,Define,Parm,_IO_getc@__fp,_IO_FILE *
+430,Define,FunctionDeclare,_IO_putc,int
+430,Define,Parm,_IO_putc@__c,int
+430,Define,Parm,_IO_putc@__fp,_IO_FILE *
+431,Define,FunctionDeclare,_IO_feof,int
+431,Define,Parm,_IO_feof@__fp,_IO_FILE *
+432,Define,FunctionDeclare,_IO_ferror,int
+432,Define,Parm,_IO_ferror@__fp,_IO_FILE *
+434,Define,FunctionDeclare,_IO_peekc_locked,int
+434,Define,Parm,_IO_peekc_locked@__fp,_IO_FILE *
+440,Define,FunctionDeclare,_IO_flockfile,void
+440,Define,Parm,_IO_flockfile@,_IO_FILE *
+441,Define,FunctionDeclare,_IO_funlockfile,void
+441,Define,Parm,_IO_funlockfile@,_IO_FILE *
+442,Define,FunctionDeclare,_IO_ftrylockfile,int
+442,Define,Parm,_IO_ftrylockfile@,_IO_FILE *
+459,Define,FunctionDeclare,_IO_vfscanf,int
+459,Define,Parm,_IO_vfscanf@,_IO_FILE *__restrict
+459,Define,Parm,_IO_vfscanf@,const char *__restrict
+460,Define,Parm,_IO_vfscanf@,struct __va_list_tag *
+460,Define,Parm,_IO_vfscanf@,int *__restrict
+461,Define,FunctionDeclare,_IO_vfprintf,int
+461,Define,Parm,_IO_vfprintf@,_IO_FILE *__restrict
+461,Define,Parm,_IO_vfprintf@,const char *__restrict
+462,Define,Parm,_IO_vfprintf@,struct __va_list_tag *
+463,Define,FunctionDeclare,_IO_padn,__ssize_t
+463,Define,Parm,_IO_padn@,_IO_FILE *
+463,Define,Parm,_IO_padn@,int
+463,Define,Parm,_IO_padn@,__ssize_t
+464,Define,FunctionDeclare,_IO_sgetn,size_t
+464,Define,Parm,_IO_sgetn@,_IO_FILE *
+464,Define,Parm,_IO_sgetn@,void *
+464,Define,Parm,_IO_sgetn@,size_t
+466,Define,FunctionDeclare,_IO_seekoff,__off64_t
+466,Define,Parm,_IO_seekoff@,_IO_FILE *
+466,Define,Parm,_IO_seekoff@,__off64_t
+466,Define,Parm,_IO_seekoff@,int
+466,Define,Parm,_IO_seekoff@,int
+467,Define,FunctionDeclare,_IO_seekpos,__off64_t
+467,Define,Parm,_IO_seekpos@,_IO_FILE *
+467,Define,Parm,_IO_seekpos@,__off64_t
+467,Define,Parm,_IO_seekpos@,int
+469,Define,FunctionDeclare,_IO_free_backup_area,void
+469,Define,Parm,_IO_free_backup_area@,_IO_FILE *
+168,Define,_Global_@stdin,struct _IO_FILE *
+169,Define,_Global_@stdout,struct _IO_FILE *
+170,Define,_Global_@stderr,struct _IO_FILE *
+178,Define,FunctionDeclare,remove,int
+178,Define,Parm,remove@__filename,const char *
+180,Define,FunctionDeclare,rename,int
+180,Define,Parm,rename@__old,const char *
+180,Define,Parm,rename@__new,const char *
+185,Define,FunctionDeclare,renameat,int
+185,Define,Parm,renameat@__oldfd,int
+185,Define,Parm,renameat@__old,const char *
+185,Define,Parm,renameat@__newfd,int
+186,Define,Parm,renameat@__new,const char *
+195,Define,FunctionDeclare,tmpfile,FILE *
+209,Define,FunctionDeclare,tmpnam,char *
+209,Define,Parm,tmpnam@__s,char *
+215,Define,FunctionDeclare,tmpnam_r,char *
+215,Define,Parm,tmpnam_r@__s,char *
+227,Define,FunctionDeclare,tempnam,char *
+227,Define,Parm,tempnam@__dir,const char *
+227,Define,Parm,tempnam@__pfx,const char *
+237,Define,FunctionDeclare,fclose,int
+237,Define,Parm,fclose@__stream,FILE *
+242,Define,FunctionDeclare,fflush,int
+242,Define,Parm,fflush@__stream,FILE *
+252,Define,FunctionDeclare,fflush_unlocked,int
+252,Define,Parm,fflush_unlocked@__stream,FILE *
+272,Define,FunctionDeclare,fopen,FILE *
+272,Define,Parm,fopen@__filename,const char *__restrict
+273,Define,Parm,fopen@__modes,const char *__restrict
+278,Define,FunctionDeclare,freopen,FILE *
+278,Define,Parm,freopen@__filename,const char *__restrict
+279,Define,Parm,freopen@__modes,const char *__restrict
+280,Define,Parm,freopen@__stream,FILE *__restrict
+306,Define,FunctionDeclare,fdopen,FILE *
+306,Define,Parm,fdopen@__fd,int
+306,Define,Parm,fdopen@__modes,const char *
+319,Define,FunctionDeclare,fmemopen,FILE *
+319,Define,Parm,fmemopen@__s,void *
+319,Define,Parm,fmemopen@__len,size_t
+319,Define,Parm,fmemopen@__modes,const char *
+325,Define,FunctionDeclare,open_memstream,FILE *
+325,Define,Parm,open_memstream@__bufloc,char **
+325,Define,Parm,open_memstream@__sizeloc,size_t *
+332,Define,FunctionDeclare,setbuf,void
+332,Define,Parm,setbuf@__stream,FILE *__restrict
+332,Define,Parm,setbuf@__buf,char *__restrict
+336,Define,FunctionDeclare,setvbuf,int
+336,Define,Parm,setvbuf@__stream,FILE *__restrict
+336,Define,Parm,setvbuf@__buf,char *__restrict
+337,Define,Parm,setvbuf@__modes,int
+337,Define,Parm,setvbuf@__n,size_t
+343,Define,FunctionDeclare,setbuffer,void
+343,Define,Parm,setbuffer@__stream,FILE *__restrict
+343,Define,Parm,setbuffer@__buf,char *__restrict
+344,Define,Parm,setbuffer@__size,size_t
+347,Define,FunctionDeclare,setlinebuf,void
+347,Define,Parm,setlinebuf@__stream,FILE *
+356,Define,FunctionDeclare,fprintf,int
+356,Define,Parm,fprintf@__stream,FILE *__restrict
+357,Define,Parm,fprintf@__format,const char *__restrict
+362,Define,FunctionDeclare,printf,int
+362,Define,Parm,printf@__format,const char *__restrict
+364,Define,FunctionDeclare,sprintf,int
+364,Define,Parm,sprintf@__s,char *__restrict
+365,Define,Parm,sprintf@__format,const char *__restrict
+371,Define,FunctionDeclare,vfprintf,int
+371,Define,Parm,vfprintf@__s,FILE *__restrict
+371,Define,Parm,vfprintf@__format,const char *__restrict
+372,Define,Parm,vfprintf@__arg,struct __va_list_tag *
+377,Define,FunctionDeclare,vprintf,int
+377,Define,Parm,vprintf@__format,const char *__restrict
+377,Define,Parm,vprintf@__arg,struct __va_list_tag *
+379,Define,FunctionDeclare,vsprintf,int
+379,Define,Parm,vsprintf@__s,char *__restrict
+379,Define,Parm,vsprintf@__format,const char *__restrict
+380,Define,Parm,vsprintf@__arg,struct __va_list_tag *
+386,Define,FunctionDeclare,snprintf,int
+386,Define,Parm,snprintf@__s,char *__restrict
+386,Define,Parm,snprintf@__maxlen,size_t
+387,Define,Parm,snprintf@__format,const char *__restrict
+390,Define,FunctionDeclare,vsnprintf,int
+390,Define,Parm,vsnprintf@__s,char *__restrict
+390,Define,Parm,vsnprintf@__maxlen,size_t
+391,Define,Parm,vsnprintf@__format,const char *__restrict
+391,Define,Parm,vsnprintf@__arg,struct __va_list_tag *
+412,Define,FunctionDeclare,vdprintf,int
+412,Define,Parm,vdprintf@__fd,int
+412,Define,Parm,vdprintf@__fmt,const char *__restrict
+413,Define,Parm,vdprintf@__arg,struct __va_list_tag *
+415,Define,FunctionDeclare,dprintf,int
+415,Define,Parm,dprintf@__fd,int
+415,Define,Parm,dprintf@__fmt,const char *__restrict
+425,Define,FunctionDeclare,fscanf,int
+425,Define,Parm,fscanf@__stream,FILE *__restrict
+426,Define,Parm,fscanf@__format,const char *__restrict
+431,Define,FunctionDeclare,scanf,int
+431,Define,Parm,scanf@__format,const char *__restrict
+433,Define,FunctionDeclare,sscanf,int
+433,Define,Parm,sscanf@__s,const char *__restrict
+434,Define,Parm,sscanf@__format,const char *__restrict
+443,Define,FunctionDeclare,fscanf,int
+443,Define,Parm,fscanf@__stream,FILE *__restrict
+443,Define,Parm,fscanf@__format,const char *__restrict
+446,Define,FunctionDeclare,scanf,int
+446,Define,Parm,scanf@__format,const char *__restrict
+448,Define,FunctionDeclare,sscanf,int
+448,Define,Parm,sscanf@__s,const char *__restrict
+448,Define,Parm,sscanf@__format,const char *__restrict
+471,Define,FunctionDeclare,vfscanf,int
+471,Define,Parm,vfscanf@__s,FILE *__restrict
+471,Define,Parm,vfscanf@__format,const char *__restrict
+472,Define,Parm,vfscanf@__arg,struct __va_list_tag *
+479,Define,FunctionDeclare,vscanf,int
+479,Define,Parm,vscanf@__format,const char *__restrict
+479,Define,Parm,vscanf@__arg,struct __va_list_tag *
+483,Define,FunctionDeclare,vsscanf,int
+483,Define,Parm,vsscanf@__s,const char *__restrict
+484,Define,Parm,vsscanf@__format,const char *__restrict
+484,Define,Parm,vsscanf@__arg,struct __va_list_tag *
+494,Define,FunctionDeclare,vfscanf,int
+494,Define,Parm,vfscanf@__s,FILE *__restrict
+494,Define,Parm,vfscanf@__format,const char *__restrict
+494,Define,Parm,vfscanf@__arg,struct __va_list_tag *
+499,Define,FunctionDeclare,vscanf,int
+499,Define,Parm,vscanf@__format,const char *__restrict
+499,Define,Parm,vscanf@__arg,struct __va_list_tag *
+502,Define,FunctionDeclare,vsscanf,int
+502,Define,Parm,vsscanf@__s,const char *__restrict
+502,Define,Parm,vsscanf@__format,const char *__restrict
+502,Define,Parm,vsscanf@__arg,struct __va_list_tag *
+531,Define,FunctionDeclare,fgetc,int
+531,Define,Parm,fgetc@__stream,FILE *
+532,Define,FunctionDeclare,getc,int
+532,Define,Parm,getc@__stream,FILE *
+538,Define,FunctionDeclare,getchar,int
+550,Define,FunctionDeclare,getc_unlocked,int
+550,Define,Parm,getc_unlocked@__stream,FILE *
+551,Define,FunctionDeclare,getchar_unlocked,int
+561,Define,FunctionDeclare,fgetc_unlocked,int
+561,Define,Parm,fgetc_unlocked@__stream,FILE *
+573,Define,FunctionDeclare,fputc,int
+573,Define,Parm,fputc@__c,int
+573,Define,Parm,fputc@__stream,FILE *
+574,Define,FunctionDeclare,putc,int
+574,Define,Parm,putc@__c,int
+574,Define,Parm,putc@__stream,FILE *
+580,Define,FunctionDeclare,putchar,int
+580,Define,Parm,putchar@__c,int
+594,Define,FunctionDeclare,fputc_unlocked,int
+594,Define,Parm,fputc_unlocked@__c,int
+594,Define,Parm,fputc_unlocked@__stream,FILE *
+602,Define,FunctionDeclare,putc_unlocked,int
+602,Define,Parm,putc_unlocked@__c,int
+602,Define,Parm,putc_unlocked@__stream,FILE *
+603,Define,FunctionDeclare,putchar_unlocked,int
+603,Define,Parm,putchar_unlocked@__c,int
+610,Define,FunctionDeclare,getw,int
+610,Define,Parm,getw@__stream,FILE *
+613,Define,FunctionDeclare,putw,int
+613,Define,Parm,putw@__w,int
+613,Define,Parm,putw@__stream,FILE *
+622,Define,FunctionDeclare,fgets,char *
+622,Define,Parm,fgets@__s,char *__restrict
+622,Define,Parm,fgets@__n,int
+622,Define,Parm,fgets@__stream,FILE *__restrict
+665,Define,FunctionDeclare,__getdelim,__ssize_t
+665,Define,Parm,__getdelim@__lineptr,char **__restrict
+666,Define,Parm,__getdelim@__n,size_t *__restrict
+666,Define,Parm,__getdelim@__delimiter,int
+667,Define,Parm,__getdelim@__stream,FILE *__restrict
+668,Define,FunctionDeclare,getdelim,__ssize_t
+668,Define,Parm,getdelim@__lineptr,char **__restrict
+669,Define,Parm,getdelim@__n,size_t *__restrict
+669,Define,Parm,getdelim@__delimiter,int
+670,Define,Parm,getdelim@__stream,FILE *__restrict
+678,Define,FunctionDeclare,getline,__ssize_t
+678,Define,Parm,getline@__lineptr,char **__restrict
+679,Define,Parm,getline@__n,size_t *__restrict
+680,Define,Parm,getline@__stream,FILE *__restrict
+689,Define,FunctionDeclare,fputs,int
+689,Define,Parm,fputs@__s,const char *__restrict
+689,Define,Parm,fputs@__stream,FILE *__restrict
+695,Define,FunctionDeclare,puts,int
+695,Define,Parm,puts@__s,const char *
+702,Define,FunctionDeclare,ungetc,int
+702,Define,Parm,ungetc@__c,int
+702,Define,Parm,ungetc@__stream,FILE *
+709,Define,FunctionDeclare,fread,size_t
+709,Define,Parm,fread@__ptr,void *__restrict
+709,Define,Parm,fread@__size,size_t
+710,Define,Parm,fread@__n,size_t
+710,Define,Parm,fread@__stream,FILE *__restrict
+715,Define,FunctionDeclare,fwrite,size_t
+715,Define,Parm,fwrite@__ptr,const void *__restrict
+715,Define,Parm,fwrite@__size,size_t
+716,Define,Parm,fwrite@__n,size_t
+716,Define,Parm,fwrite@__s,FILE *__restrict
+737,Define,FunctionDeclare,fread_unlocked,size_t
+737,Define,Parm,fread_unlocked@__ptr,void *__restrict
+737,Define,Parm,fread_unlocked@__size,size_t
+738,Define,Parm,fread_unlocked@__n,size_t
+738,Define,Parm,fread_unlocked@__stream,FILE *__restrict
+739,Define,FunctionDeclare,fwrite_unlocked,size_t
+739,Define,Parm,fwrite_unlocked@__ptr,const void *__restrict
+739,Define,Parm,fwrite_unlocked@__size,size_t
+740,Define,Parm,fwrite_unlocked@__n,size_t
+740,Define,Parm,fwrite_unlocked@__stream,FILE *__restrict
+749,Define,FunctionDeclare,fseek,int
+749,Define,Parm,fseek@__stream,FILE *
+749,Define,Parm,fseek@__off,long
+749,Define,Parm,fseek@__whence,int
+754,Define,FunctionDeclare,ftell,long
+754,Define,Parm,ftell@__stream,FILE *
+759,Define,FunctionDeclare,rewind,void
+759,Define,Parm,rewind@__stream,FILE *
+773,Define,FunctionDeclare,fseeko,int
+773,Define,Parm,fseeko@__stream,FILE *
+773,Define,Parm,fseeko@__off,__off_t
+773,Define,Parm,fseeko@__whence,int
+778,Define,FunctionDeclare,ftello,__off_t
+778,Define,Parm,ftello@__stream,FILE *
+798,Define,FunctionDeclare,fgetpos,int
+798,Define,Parm,fgetpos@__stream,FILE *__restrict
+798,Define,Parm,fgetpos@__pos,fpos_t *__restrict
+803,Define,FunctionDeclare,fsetpos,int
+803,Define,Parm,fsetpos@__stream,FILE *
+803,Define,Parm,fsetpos@__pos,const fpos_t *
+826,Define,FunctionDeclare,clearerr,void
+826,Define,Parm,clearerr@__stream,FILE *
+828,Define,FunctionDeclare,feof,int
+828,Define,Parm,feof@__stream,FILE *
+830,Define,FunctionDeclare,ferror,int
+830,Define,Parm,ferror@__stream,FILE *
+835,Define,FunctionDeclare,clearerr_unlocked,void
+835,Define,Parm,clearerr_unlocked@__stream,FILE *
+836,Define,FunctionDeclare,feof_unlocked,int
+836,Define,Parm,feof_unlocked@__stream,FILE *
+837,Define,FunctionDeclare,ferror_unlocked,int
+837,Define,Parm,ferror_unlocked@__stream,FILE *
+846,Define,FunctionDeclare,perror,void
+846,Define,Parm,perror@__s,const char *
+26,Define,_Global_@sys_nerr,int
+27,Define,_Global_@sys_errlist,const char *const []
+858,Define,FunctionDeclare,fileno,int
+858,Define,Parm,fileno@__stream,FILE *
+863,Define,FunctionDeclare,fileno_unlocked,int
+863,Define,Parm,fileno_unlocked@__stream,FILE *
+872,Define,FunctionDeclare,popen,FILE *
+872,Define,Parm,popen@__command,const char *
+872,Define,Parm,popen@__modes,const char *
+878,Define,FunctionDeclare,pclose,int
+878,Define,Parm,pclose@__stream,FILE *
+884,Define,FunctionDeclare,ctermid,char *
+884,Define,Parm,ctermid@__s,char *
+912,Define,FunctionDeclare,flockfile,void
+912,Define,Parm,flockfile@__stream,FILE *
+916,Define,FunctionDeclare,ftrylockfile,int
+916,Define,Parm,ftrylockfile@__stream,FILE *
+919,Define,FunctionDeclare,funlockfile,void
+919,Define,Parm,funlockfile@__stream,FILE *
+42,Define,FunctionDeclare,memcpy,void *
+42,Define,Parm,memcpy@__dest,void *__restrict
+42,Define,Parm,memcpy@__src,const void *__restrict
+43,Define,Parm,memcpy@__n,size_t
+46,Define,FunctionDeclare,memmove,void *
+46,Define,Parm,memmove@__dest,void *
+46,Define,Parm,memmove@__src,const void *
+46,Define,Parm,memmove@__n,size_t
+54,Define,FunctionDeclare,memccpy,void *
+54,Define,Parm,memccpy@__dest,void *__restrict
+54,Define,Parm,memccpy@__src,const void *__restrict
+55,Define,Parm,memccpy@__c,int
+55,Define,Parm,memccpy@__n,size_t
+62,Define,FunctionDeclare,memset,void *
+62,Define,Parm,memset@__s,void *
+62,Define,Parm,memset@__c,int
+62,Define,Parm,memset@__n,size_t
+65,Define,FunctionDeclare,memcmp,int
+65,Define,Parm,memcmp@__s1,const void *
+65,Define,Parm,memcmp@__s2,const void *
+65,Define,Parm,memcmp@__n,size_t
+92,Define,FunctionDeclare,memchr,void *
+92,Define,Parm,memchr@__s,const void *
+92,Define,Parm,memchr@__c,int
+92,Define,Parm,memchr@__n,size_t
+125,Define,FunctionDeclare,strcpy,char *
+125,Define,Parm,strcpy@__dest,char *__restrict
+125,Define,Parm,strcpy@__src,const char *__restrict
+128,Define,FunctionDeclare,strncpy,char *
+128,Define,Parm,strncpy@__dest,char *__restrict
+129,Define,Parm,strncpy@__src,const char *__restrict
+129,Define,Parm,strncpy@__n,size_t
+133,Define,FunctionDeclare,strcat,char *
+133,Define,Parm,strcat@__dest,char *__restrict
+133,Define,Parm,strcat@__src,const char *__restrict
+136,Define,FunctionDeclare,strncat,char *
+136,Define,Parm,strncat@__dest,char *__restrict
+136,Define,Parm,strncat@__src,const char *__restrict
+137,Define,Parm,strncat@__n,size_t
+140,Define,FunctionDeclare,strcmp,int
+140,Define,Parm,strcmp@__s1,const char *
+140,Define,Parm,strcmp@__s2,const char *
+143,Define,FunctionDeclare,strncmp,int
+143,Define,Parm,strncmp@__s1,const char *
+143,Define,Parm,strncmp@__s2,const char *
+143,Define,Parm,strncmp@__n,size_t
+147,Define,FunctionDeclare,strcoll,int
+147,Define,Parm,strcoll@__s1,const char *
+147,Define,Parm,strcoll@__s2,const char *
+150,Define,FunctionDeclare,strxfrm,unsigned long
+150,Define,Parm,strxfrm@__dest,char *__restrict
+151,Define,Parm,strxfrm@__src,const char *__restrict
+151,Define,Parm,strxfrm@__n,size_t
+162,Define,FunctionDeclare,strcoll_l,int
+162,Define,Parm,strcoll_l@__s1,const char *
+162,Define,Parm,strcoll_l@__s2,const char *
+162,Define,Parm,strcoll_l@__l,__locale_t
+165,Define,FunctionDeclare,strxfrm_l,size_t
+165,Define,Parm,strxfrm_l@__dest,char *
+165,Define,Parm,strxfrm_l@__src,const char *
+165,Define,Parm,strxfrm_l@__n,size_t
+166,Define,Parm,strxfrm_l@__l,__locale_t
+171,Define,FunctionDeclare,strdup,char *
+171,Define,Parm,strdup@__s,const char *
+179,Define,FunctionDeclare,strndup,char *
+179,Define,Parm,strndup@__string,const char *
+179,Define,Parm,strndup@__n,size_t
+231,Define,FunctionDeclare,strchr,char *
+231,Define,Parm,strchr@__s,const char *
+231,Define,Parm,strchr@__c,int
+258,Define,FunctionDeclare,strrchr,char *
+258,Define,Parm,strrchr@__s,const char *
+258,Define,Parm,strrchr@__c,int
+280,Define,FunctionDeclare,strcspn,unsigned long
+280,Define,Parm,strcspn@__s,const char *
+280,Define,Parm,strcspn@__reject,const char *
+284,Define,FunctionDeclare,strspn,unsigned long
+284,Define,Parm,strspn@__s,const char *
+284,Define,Parm,strspn@__accept,const char *
+310,Define,FunctionDeclare,strpbrk,char *
+310,Define,Parm,strpbrk@__s,const char *
+310,Define,Parm,strpbrk@__accept,const char *
+337,Define,FunctionDeclare,strstr,char *
+337,Define,Parm,strstr@__haystack,const char *
+337,Define,Parm,strstr@__needle,const char *
+343,Define,FunctionDeclare,strtok,char *
+343,Define,Parm,strtok@__s,char *__restrict
+343,Define,Parm,strtok@__delim,const char *__restrict
+349,Define,FunctionDeclare,__strtok_r,char *
+349,Define,Parm,__strtok_r@__s,char *__restrict
+350,Define,Parm,__strtok_r@__delim,const char *__restrict
+351,Define,Parm,__strtok_r@__save_ptr,char **__restrict
+354,Define,FunctionDeclare,strtok_r,char *
+354,Define,Parm,strtok_r@__s,char *__restrict
+354,Define,Parm,strtok_r@__delim,const char *__restrict
+355,Define,Parm,strtok_r@__save_ptr,char **__restrict
+394,Define,FunctionDeclare,strlen,unsigned long
+394,Define,Parm,strlen@__s,const char *
+401,Define,FunctionDeclare,strnlen,size_t
+401,Define,Parm,strnlen@__string,const char *
+401,Define,Parm,strnlen@__maxlen,size_t
+408,Define,FunctionDeclare,strerror,char *
+408,Define,Parm,strerror@__errnum,int
+422,Define,FunctionDeclare,strerror_r,int
+422,Define,Parm,strerror_r@__errnum,int
+422,Define,Parm,strerror_r@__buf,char *
+422,Define,Parm,strerror_r@__buflen,size_t
+440,Define,FunctionDeclare,strerror_l,char *
+440,Define,Parm,strerror_l@__errnum,int
+440,Define,Parm,strerror_l@__l,__locale_t
+446,Define,FunctionDeclare,__bzero,void
+446,Define,Parm,__bzero@__s,void *
+446,Define,Parm,__bzero@__n,size_t
+450,Define,FunctionDeclare,bcopy,void
+450,Define,Parm,bcopy@__src,const void *
+450,Define,Parm,bcopy@__dest,void *
+450,Define,Parm,bcopy@__n,size_t
+454,Define,FunctionDeclare,bzero,void
+454,Define,Parm,bzero@__s,void *
+454,Define,Parm,bzero@__n,size_t
+457,Define,FunctionDeclare,bcmp,int
+457,Define,Parm,bcmp@__s1,const void *
+457,Define,Parm,bcmp@__s2,const void *
+457,Define,Parm,bcmp@__n,size_t
+484,Define,FunctionDeclare,index,char *
+484,Define,Parm,index@__s,const char *
+484,Define,Parm,index@__c,int
+512,Define,FunctionDeclare,rindex,char *
+512,Define,Parm,rindex@__s,const char *
+512,Define,Parm,rindex@__c,int
+518,Define,FunctionDeclare,ffs,int
+518,Define,Parm,ffs@__i,int
+529,Define,FunctionDeclare,strcasecmp,int
+529,Define,Parm,strcasecmp@__s1,const char *
+529,Define,Parm,strcasecmp@__s2,const char *
+533,Define,FunctionDeclare,strncasecmp,int
+533,Define,Parm,strncasecmp@__s1,const char *
+533,Define,Parm,strncasecmp@__s2,const char *
+533,Define,Parm,strncasecmp@__n,size_t
+552,Define,FunctionDeclare,strsep,char *
+552,Define,Parm,strsep@__stringp,char **__restrict
+553,Define,Parm,strsep@__delim,const char *__restrict
+559,Define,FunctionDeclare,strsignal,char *
+559,Define,Parm,strsignal@__sig,int
+562,Define,FunctionDeclare,__stpcpy,char *
+562,Define,Parm,__stpcpy@__dest,char *__restrict
+562,Define,Parm,__stpcpy@__src,const char *__restrict
+564,Define,FunctionDeclare,stpcpy,char *
+564,Define,Parm,stpcpy@__dest,char *__restrict
+564,Define,Parm,stpcpy@__src,const char *__restrict
+569,Define,FunctionDeclare,__stpncpy,char *
+569,Define,Parm,__stpncpy@__dest,char *__restrict
+570,Define,Parm,__stpncpy@__src,const char *__restrict
+570,Define,Parm,__stpncpy@__n,size_t
+572,Define,FunctionDeclare,stpncpy,char *
+572,Define,Parm,stpncpy@__dest,char *__restrict
+573,Define,Parm,stpncpy@__src,const char *__restrict
+573,Define,Parm,stpncpy@__n,size_t
+76,Define,_Global_@method,int
+130,Define,_Global_@inbuf,uch []
+131,Define,_Global_@outbuf,uch []
+132,Define,_Global_@d_buf,ush []
+133,Define,_Global_@window,uch []
+138,Define,_Global_@prev,ush []
+146,Define,_Global_@insize,unsigned int
+147,Define,_Global_@inptr,unsigned int
+148,Define,_Global_@outcnt,unsigned int
+150,Define,_Global_@bytes_in,long
+151,Define,_Global_@bytes_out,long
+152,Define,_Global_@header_bytes,long
+157,Define,_Global_@ifd,int
+158,Define,_Global_@ofd,int
+159,Define,_Global_@ifname,char []
+160,Define,_Global_@ofname,char []
+161,Define,_Global_@progname,char *
+163,Define,_Global_@time_stamp,long
+164,Define,_Global_@ifile_size,long
+208,Define,_Global_@decrypt,int
+209,Define,_Global_@exit_code,int
+210,Define,_Global_@verbose,int
+211,Define,_Global_@quiet,int
+212,Define,_Global_@level,int
+213,Define,_Global_@test,int
+214,Define,_Global_@to_stdout,int
+215,Define,_Global_@save_orig_name,int
+277,Define,FunctionDeclare,zip,int
+277,Define,Parm,zip@in,int
+277,Define,Parm,zip@out,int
+278,Define,FunctionDeclare,file_read,int
+278,Define,Parm,file_read@buf,char *
+278,Define,Parm,file_read@size,unsigned int
+281,Define,FunctionDeclare,unzip,int
+281,Define,Parm,unzip@in,int
+281,Define,Parm,unzip@out,int
+282,Define,FunctionDeclare,check_zipfile,int
+282,Define,Parm,check_zipfile@in,int
+285,Define,FunctionDeclare,unpack,int
+285,Define,Parm,unpack@in,int
+285,Define,Parm,unpack@out,int
+288,Define,FunctionDeclare,unlzh,int
+288,Define,Parm,unlzh@in,int
+288,Define,Parm,unlzh@out,int
+291,Define,FunctionDeclare,abort_gzip,void
+294,Define,FunctionDeclare,lm_init,void
+294,Define,Parm,lm_init@pack_level,int
+294,Define,Parm,lm_init@flags,ush *
+295,Define,FunctionDeclare,deflate,ulg
+298,Define,FunctionDeclare,ct_init,void
+298,Define,Parm,ct_init@attr,ush *
+298,Define,Parm,ct_init@method,int *
+299,Define,FunctionDeclare,ct_tally,int
+299,Define,Parm,ct_tally@dist,int
+299,Define,Parm,ct_tally@lc,int
+300,Define,FunctionDeclare,flush_block,ulg
+300,Define,Parm,flush_block@buf,char *
+300,Define,Parm,flush_block@stored_len,ulg
+300,Define,Parm,flush_block@eof,int
+303,Define,FunctionDeclare,bi_init,void
+303,Define,Parm,bi_init@zipfile,file_t
+304,Define,FunctionDeclare,send_bits,void
+304,Define,Parm,send_bits@value,int
+304,Define,Parm,send_bits@length,int
+305,Define,FunctionDeclare,bi_reverse,unsigned int
+305,Define,Parm,bi_reverse@value,unsigned int
+305,Define,Parm,bi_reverse@length,int
+306,Define,FunctionDeclare,bi_windup,void
+307,Define,FunctionDeclare,copy_block,void
+307,Define,Parm,copy_block@buf,char *
+307,Define,Parm,copy_block@len,unsigned int
+307,Define,Parm,copy_block@header,int
+308,Define,_Global_@read_buf,int (*)(char *, unsigned int)
+308,Define,Parm,_Global_@buf,char *
+308,Define,Parm,_Global_@size,unsigned int
+311,Define,FunctionDeclare,copy,int
+311,Define,Parm,copy@in,int
+311,Define,Parm,copy@out,int
+312,Define,FunctionDeclare,updcrc,ulg
+312,Define,Parm,updcrc@s,uch *
+312,Define,Parm,updcrc@n,unsigned int
+313,Define,FunctionDeclare,clear_bufs,void
+314,Define,FunctionDeclare,fill_inbuf,int
+314,Define,Parm,fill_inbuf@eof_ok,int
+315,Define,FunctionDeclare,flush_outbuf,void
+316,Define,FunctionDeclare,flush_window,void
+317,Define,FunctionDeclare,write_buf,void
+317,Define,Parm,write_buf@fd,int
+317,Define,Parm,write_buf@buf,voidp
+317,Define,Parm,write_buf@cnt,unsigned int
+318,Define,FunctionDeclare,strlwr,char *
+318,Define,Parm,strlwr@s,char *
+319,Define,FunctionDeclare,gzipbasename,char *
+319,Define,Parm,gzipbasename@fname,char *
+320,Define,FunctionDeclare,make_simple_name,void
+320,Define,Parm,make_simple_name@name,char *
+321,Define,FunctionDeclare,add_envopt,char *
+321,Define,Parm,add_envopt@argcp,int *
+321,Define,Parm,add_envopt@argvp,char ***
+321,Define,Parm,add_envopt@env,char *
+322,Define,FunctionDeclare,error,void
+322,Define,Parm,error@m,char *
+323,Define,FunctionDeclare,warn,void
+323,Define,Parm,warn@a,char *
+323,Define,Parm,warn@b,char *
+324,Define,FunctionDeclare,read_error,void
+325,Define,FunctionDeclare,write_error,void
+326,Define,FunctionDeclare,display_ratio,void
+326,Define,Parm,display_ratio@num,long
+326,Define,Parm,display_ratio@den,long
+326,Define,Parm,display_ratio@file,FILE *
+327,Define,FunctionDeclare,xmalloc,voidp
+327,Define,Parm,xmalloc@size,unsigned int
+330,Define,FunctionDeclare,inflate,int
+70,Define,_Global_@zfile,file_t
+72,Define,_Global_@bi_buf,unsigned short
+72,op {_Global_@bi_buf}<-{Imm}
+82,Define,_Global_@bi_valid,int
+82,op {_Global_@bi_valid}<-{imm}
+87,Define,_Global_@read_buf,int (*)(char *, unsigned int)
+87,Define,Parm,_Global_@buf,char *
+87,Define,Parm,_Global_@size,unsigned int
+97,Define,FunctionDefine,bi_init,void
+98,Define,Parm,bi_init@zipfile,file_t
+100,op,{_Global_@zfile}<-{bi_init@zipfile} 
+101,op,{_Global_@bi_buf}<-{Imm} 
+102,op,{_Global_@bi_valid}<-{Imm} 
+110,cond, IF{}<-{_Global_@zfile,Imm},　Key
+111,op,{_Global_@read_buf}<-{_FUN_@file_read} 
+119,Define,FunctionDefine,send_bits,void
+120,Define,Parm,send_bits@value,int
+121,Define,Parm,send_bits@length,int
+132,cond, IF{}<-{_Global_@bi_valid,Imm,Imm,Imm,send_bits@length},　Key
+137,cond, Else
+133,op,{_Global_@bi_buf}<-{_Global_@bi_buf,send_bits@value,_Global_@bi_valid,Imm} 
+134,cond, IF{}<-{_Global_@outcnt,Imm,Imm},　Key
+134,cond, Else
+134,op,{_Global_@outbuf[]}<-{_Global_@bi_buf,Imm,_Global_@outcnt} 
+134,op,{_Global_@outcnt}<-{_Global_@outcnt} 
+134,op,{_Global_@outbuf[]}<-{_Global_@bi_buf,Imm,_Global_@outcnt} 
+134,op,{_Global_@outcnt}<-{_Global_@outcnt} 
+134,op,{_Global_@outbuf[]}<-{_Global_@bi_buf,Imm,_Global_@outcnt} 
+134,op,{_Global_@outcnt}<-{_Global_@outcnt} 
+134,cond, IF{}<-{_Global_@outcnt,Imm},　Key
+134,Call,Direct,flush_outbuf,Libc,Key,Para{}
+134,Call,Stack <- Address, Key
+134,op,{_Global_@outbuf[]}<-{_Global_@bi_buf,Imm,_Global_@outcnt} 
+134,op,{_Global_@outcnt}<-{_Global_@outcnt} 
+134,cond, IF{}<-{_Global_@outcnt,Imm},　Key
+134,Call,Direct,flush_outbuf,Libc,Key,Para{}
+134,Call,Stack <- Address, Key
+135,op,{_Global_@bi_buf}<-{send_bits@value,Imm,Imm,Imm,_Global_@bi_valid} 
+136,op,{_Global_@bi_valid}<-{_Global_@bi_valid,send_bits@length,Imm,Imm,Imm,Imm} 
+138,op,{_Global_@bi_buf}<-{_Global_@bi_buf,send_bits@value,_Global_@bi_valid,Imm} 
+139,op,{_Global_@bi_valid}<-{_Global_@bi_valid,send_bits@length,Imm} 
+148,Define,FunctionDefine,bi_reverse,unsigned int
+149,Define,Parm,bi_reverse@code,unsigned int
+150,Define,Parm,bi_reverse@len,int
+152,Define,bi_reverse@res,unsigned int
+152,op {bi_reverse@res}<-{Imm}
+153,cond,DO,{}<-{bi_reverse@len,Imm},　Key
+154,op,{bi_reverse@res}<-{bi_reverse@res,bi_reverse@code,Imm,Imm} 
+155,op,{bi_reverse@code}<-{bi_reverse@code,Imm,Imm} 
+155,op,{bi_reverse@res}<-{bi_reverse@res,Imm,Imm} 
+156,op,{bi_reverse@len}<-{bi_reverse@len} 
+157,Ret,{}<-{bi_reverse@res,Imm}, Address <- Stack, Key
+163,Define,FunctionDefine,bi_windup,void
+165,cond, IF{}<-{_Global_@bi_valid,Imm},　Key
+167,cond, Else
+166,cond, IF{}<-{_Global_@outcnt,Imm,Imm},　Key
+166,cond, Else
+166,op,{_Global_@outbuf[]}<-{_Global_@bi_buf,Imm,_Global_@outcnt} 
+166,op,{_Global_@outcnt}<-{_Global_@outcnt} 
+166,op,{_Global_@outbuf[]}<-{_Global_@bi_buf,Imm,_Global_@outcnt} 
+166,op,{_Global_@outcnt}<-{_Global_@outcnt} 
+166,op,{_Global_@outbuf[]}<-{_Global_@bi_buf,Imm,_Global_@outcnt} 
+166,op,{_Global_@outcnt}<-{_Global_@outcnt} 
+166,cond, IF{}<-{_Global_@outcnt,Imm},　Key
+166,Call,Direct,flush_outbuf,Libc,Key,Para{}
+166,Call,Stack <- Address, Key
+166,op,{_Global_@outbuf[]}<-{_Global_@bi_buf,Imm,_Global_@outcnt} 
+166,op,{_Global_@outcnt}<-{_Global_@outcnt} 
+166,cond, IF{}<-{_Global_@outcnt,Imm},　Key
+166,Call,Direct,flush_outbuf,Libc,Key,Para{}
+166,Call,Stack <- Address, Key
+167,cond, IF{}<-{_Global_@bi_valid,Imm},　Key
+168,op,{_Global_@outbuf[]}<-{_Global_@bi_buf,_Global_@outcnt} 
+168,op,{_Global_@outcnt}<-{_Global_@outcnt} 
+168,cond, IF{}<-{_Global_@outcnt,Imm},　Key
+168,Call,Direct,flush_outbuf,Libc,Key,Para{}
+168,Call,Stack <- Address, Key
+170,op,{_Global_@bi_buf}<-{Imm} 
+171,op,{_Global_@bi_valid}<-{Imm} 
+181,Define,FunctionDefine,copy_block,void
+182,Define,Parm,copy_block@buf,char *
+183,Define,Parm,copy_block@len,unsigned int
+184,Define,Parm,copy_block@header,int
+186,Call,Direct,bi_windup,Para{}
+186,Call,Stack <- Address, Key
+188,cond, IF{}<-{copy_block@header},　Key
+189,cond, IF{}<-{_Global_@outcnt,Imm,Imm},　Key
+189,cond, Else
+189,op,{_Global_@outbuf[]}<-{copy_block@len,Imm,_Global_@outcnt} 
+189,op,{_Global_@outcnt}<-{_Global_@outcnt} 
+189,op,{_Global_@outbuf[]}<-{copy_block@len,Imm,_Global_@outcnt} 
+189,op,{_Global_@outcnt}<-{_Global_@outcnt} 
+189,op,{_Global_@outbuf[]}<-{copy_block@len,Imm,_Global_@outcnt} 
+189,op,{_Global_@outcnt}<-{_Global_@outcnt} 
+189,cond, IF{}<-{_Global_@outcnt,Imm},　Key
+189,Call,Direct,flush_outbuf,Libc,Key,Para{}
+189,Call,Stack <- Address, Key
+189,op,{_Global_@outbuf[]}<-{copy_block@len,Imm,_Global_@outcnt} 
+189,op,{_Global_@outcnt}<-{_Global_@outcnt} 
+189,cond, IF{}<-{_Global_@outcnt,Imm},　Key
+189,Call,Direct,flush_outbuf,Libc,Key,Para{}
+189,Call,Stack <- Address, Key
+190,cond, IF{}<-{_Global_@outcnt,Imm,Imm},　Key
+190,cond, Else
+190,op,{_Global_@outbuf[]}<-{copy_block@len,Imm,_Global_@outcnt} 
+190,op,{_Global_@outcnt}<-{_Global_@outcnt} 
+190,op,{_Global_@outbuf[]}<-{copy_block@len,Imm,_Global_@outcnt} 
+190,op,{_Global_@outcnt}<-{_Global_@outcnt} 
+190,op,{_Global_@outbuf[]}<-{copy_block@len,Imm,_Global_@outcnt} 
+190,op,{_Global_@outcnt}<-{_Global_@outcnt} 
+190,cond, IF{}<-{_Global_@outcnt,Imm},　Key
+190,Call,Direct,flush_outbuf,Libc,Key,Para{}
+190,Call,Stack <- Address, Key
+190,op,{_Global_@outbuf[]}<-{copy_block@len,Imm,_Global_@outcnt} 
+190,op,{_Global_@outcnt}<-{_Global_@outcnt} 
+190,cond, IF{}<-{_Global_@outcnt,Imm},　Key
+190,Call,Direct,flush_outbuf,Libc,Key,Para{}
+190,Call,Stack <- Address, Key
+198,cond,WHILE,{}<-{copy_block@len},　Key
+198,op,{copy_block@len}<-{copy_block@len} 
+203,op,{_Global_@outbuf[]}<-{copy_block@buf,_Global_@outcnt} 
+203,op,{_Global_@outcnt}<-{_Global_@outcnt} 
+203,op,{copy_block@buf}<-{copy_block@buf} unsafePointer  
+203,cond, IF{}<-{_Global_@outcnt,Imm},　Key
+203,Call,Direct,flush_outbuf,Libc,Key,Para{}
+203,Call,Stack <- Address, Key
