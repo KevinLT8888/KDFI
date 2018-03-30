@@ -44,7 +44,7 @@ public:
         else if(isa<ReturnStmt>(S)){ //函数返回结点
             HandleRet(S);
         }
-		else if(isa<IfStmt>(S) || isa<ForStmt>(S) || isa<WhileStmt>(S) || isa<SwitchStmt>(S)){ //条件判断及循环结点
+		else if(isa<IfStmt>(S) || isa<ForStmt>(S) || isa<WhileStmt>(S) || isa<SwitchStmt>(S) || isa<DoStmt>(S)){ //条件判断及循环结点
             HandleCond(S);
         }else{//其他情况
             HandleOthers(S);
@@ -235,7 +235,7 @@ void ClangPluginASTVisitor::HandleCall(Stmt *S){//当前用于处理函数调用
     //具体要求见KDFI设计文档
     output_data.open("testout.txt",ios::app);
     FullSourceLoc fsl = context->getFullLoc(S->getLocStart());
-    unsigned linenumber = fsl.getSpellingLineNumber();
+    unsigned linenumber = fsl.getExpansionLineNumber();
     CallExpr *CE = dyn_cast<CallExpr>(S);
     //S->dump();
     string args="";
@@ -273,7 +273,8 @@ void ClangPluginASTVisitor::HandleRet(Stmt *S){
     //S->dump();
     output_data.open("testout.txt",ios::app);
     FullSourceLoc fsl = context->getFullLoc(S->getLocStart());
-    unsigned linenumber = fsl.getSpellingLineNumber();
+    //unsigned linenumber = fsl.getSpellingLineNumber();
+    unsigned linenumber = fsl.getExpansionLineNumber();
     ReturnStmt *RS = dyn_cast<ReturnStmt>(S);
     string retStr = "";
     if(Expr *child = RS->getRetValue()){
@@ -317,7 +318,8 @@ void ClangPluginASTVisitor::HandleCond(Stmt *S){
         //whileStmt -> dump();
         Expr* expr = whileStmt -> getCond();
         //expr -> dump();
-        string str = getCondStr(expr);
+        string str = HelpVisitRightTree(expr);
+        str = HelpCutTheLastComma(str);
         output_data  << lineNum << "," << "cond" << "," << "WHILE" << "," << "{}<-{" << str << "}" << ",　Key\n";
         llvm::errs() << lineNum << "," << "cond" << "," << "WHILE" << "," << "{}<-{" << str << "}" << ",　Key\n";
     } else if(isa<SwitchStmt>(S)) {
@@ -331,7 +333,8 @@ void ClangPluginASTVisitor::HandleCond(Stmt *S){
     } else if(isa<DoStmt>(S)){
         DoStmt* doStmt = dyn_cast<DoStmt>(S);
         Expr* expr = doStmt -> getCond();
-        string str = getCondStr(expr);
+        string str = HelpVisitRightTree(expr);
+        str = HelpCutTheLastComma(str);
         output_data  << lineNum << "," << "cond" << "," << "DO" << "," << "{}<-{" << str << "}" << ",　Key\n";
         llvm::errs() << lineNum << "," << "cond" << "," << "DO" << "," << "{}<-{" << str << "}" << ",　Key\n";
     }
@@ -479,7 +482,8 @@ string ClangPluginASTVisitor::HelpGetSrc(Expr* expl,Expr* expr,string leftop){
 }
 string ClangPluginASTVisitor::HelpVisitRightTree(Expr * root){
     //这个函数用于访问等号右边出现的四则运算，可以处理多次运算，使用二叉树的后序遍历方法。 对于指针运算，最多处理两层   
-    string src = "";    
+    string src = "";  
+    //root->dump();  
     if(isa<BinaryOperator>(root)){
         BinaryOperator *par = dyn_cast<BinaryOperator>(root);
         Expr *lchild = par -> getLHS();
@@ -565,8 +569,17 @@ string ClangPluginASTVisitor::HelpVisitRightTree(Expr * root){
                 //if(isa)
                 src += HelpVisitRightTree(expr);
             }            
-        }
-        
+        }else if(isa<CStyleCastExpr>(*(root->child_begin()))){
+            CStyleCastExpr *CSCE = dyn_cast<CStyleCastExpr>(*(root->child_begin()));
+            if(isa<ParenExpr>(*(CSCE->child_begin()))){
+                ParenExpr *PE = dyn_cast<ParenExpr>(*(CSCE -> child_begin()));
+                src += HelpVisitRightTree(PE);
+            }
+            else {
+                Expr *expr = dyn_cast<Expr>(*(CSCE->child_begin()));
+                src += HelpVisitRightTree(expr);
+            }
+        }        
     }
     else if(isa<CallExpr>(root)){
         //llvm::errs()<<"Found a Function";
@@ -620,6 +633,7 @@ string ClangPluginASTVisitor::HelpVisitRightTree(Expr * root){
         }
     }
     else if(CStyleCastExpr *CSCE = dyn_cast<CStyleCastExpr>(root)){
+        //CSCE ->dump();
         if(isa<ParenExpr>(*(CSCE->child_begin()))){
             ParenExpr *PE = dyn_cast<ParenExpr>(*(CSCE -> child_begin()));
             src += HelpVisitRightTree(PE);
@@ -636,7 +650,12 @@ string ClangPluginASTVisitor::HelpVisitRightTree(Expr * root){
     //        //获取到了这个数组的索引信息，也就是方括号里面的内容，方括号里面的也可能是一个操作式，需要树状分析
             src += HelpVisitRightTree(Idx);
         }
-    }    
+    }
+    else if(ParenExpr *PE = dyn_cast<ParenExpr>(root)){
+        //PE->dump();
+        Expr *content = dyn_cast<Expr>(*(PE->child_begin()));
+        src += HelpVisitRightTree(content);
+    }
     //else root->dump();
     return src;
 }
@@ -657,7 +676,7 @@ string ClangPluginASTVisitor::HelpHandleIncrementDecrementOp(UnaryOperator * UO,
     FullSourceLoc fsl = context -> getFullLoc(UO -> getLocStart());
     string left;
     if(fsl.isValid()){
-        unsigned linenumber = fsl.getSpellingLineNumber(); //记录行号                
+        unsigned linenumber = fsl.getExpansionLineNumber(); //记录行号                
         Expr *expr = UO -> getSubExpr();
         DeclRefExpr *e;                				
         while((e = dyn_cast<DeclRefExpr>(expr))==NULL){ //得到变量名
@@ -668,10 +687,10 @@ string ClangPluginASTVisitor::HelpHandleIncrementDecrementOp(UnaryOperator * UO,
         }
         left += HelpHandleDeclRefExpr(e);
         if(printout){ 
-            output_data.open("testout.txt",ios::app);
+            //output_data.open("testout.txt",ios::app);
             output_data  << linenumber << ",op,{" << left << "}<-{" << left <<"} "<< safeOrNot <<"\n";
             llvm::errs() << linenumber << ",op,{" << left << "}<-{" << left <<"} "<< safeOrNot <<"\n";
-            output_data.close();
+            //output_data.close();
         }
     }
     return left;
@@ -679,17 +698,27 @@ string ClangPluginASTVisitor::HelpHandleIncrementDecrementOp(UnaryOperator * UO,
 string ClangPluginASTVisitor::HelpHandleCompoundAssignOperator(CompoundAssignOperator *CO,bool printout,string safeOrNot){
     FullSourceLoc fsl = context -> getFullLoc(CO -> getLocStart());
     string left = "";
+    string src = "";
+    //CO->dump();
     if(fsl.isValid()){
-        unsigned linenumber =  fsl.getSpellingLineNumber();
+        unsigned linenumber =  fsl.getExpansionLineNumber();
         //DeclRefExpr *DRE = *(CO->child_begin());
         if(DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(*(CO->child_begin()))){
             left += HelpHandleDeclRefExpr(DRE);
         }
+        Expr *rhs = CO->getRHS();
+        //rhs->dump();
+        src += HelpVisitRightTree(rhs);
+        //if(isa<BinaryOperator>(rhs)){
+            //rhs->dump();
+        //    src += HelpVisitRightTree(rhs);
+            //src = HelpCutTheLastComma(src);
+        //}
         if(printout){
-            output_data.open("testout.txt",ios::app);
-            output_data  << linenumber << ",op,{" << left << "}<-{" << left <<"，Imm} "<< safeOrNot <<"\n";          
-            llvm::errs() << linenumber << ",op,{" << left << "}<-{" << left <<"，Imm} "<< safeOrNot <<"\n";
-            output_data.close();
+            //output_data.open("testout.txt",ios::app);
+            output_data  << linenumber << ",op,{" << left << "}<-{" << left << "," << src << "Imm} "<< safeOrNot <<"\n";          
+            llvm::errs() << linenumber << ",op,{" << left << "}<-{" << left << "," << src << "Imm} "<< safeOrNot <<"\n";
+            //output_data.close();
         }
     }
     return left;
