@@ -1,0 +1,1 @@
+目前使用spec中的gzip测试用例进行调试，gzipsrc文件夹中存放的是源文件，gzipanalysis中存放的是分析结果。
