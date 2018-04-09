@@ -240,9 +240,7 @@ void ClangPluginASTVisitor::HandleOp(Stmt *S){
                     llvm::errs()<< "\nError:src not found\n";
                     exprr -> dump();
                 }
-                if(src[src.size()-1]==',')
-                    src = src.substr(0,src.size()-1);                
-                //string safeOrNot = HandleSafeType(S);
+                src = HelpCutTheLastComma(src);
                 output_data  << src << "} "<< safeOrNot << "\n";
                 llvm::errs() << src << "} "<< safeOrNot << "\n";
  		    }
@@ -331,8 +329,9 @@ void ClangPluginASTVisitor::HandleCond(Stmt *S){
         ForStmt* forStmt = (ForStmt*)S;
         //forStmt -> dump();
         if(Expr* expr = forStmt -> getCond()){
-            str = HelpVisitRightTree(expr);                
-        //expr -> dump();  
+            str = HelpVisitRightTree(expr);
+            str = HelpCutTheLastComma(str);
+            //expr -> dump();  
             output_data  << lineNum << "," << "cond" << "," << "FOR" << "," << "{}<-{" << str << "}" << ",　Key\n";
             llvm::errs() << lineNum << "," << "cond" << "," << "FOR" << "," << "{}<-{" << str << "}" << ",　Key\n";
         }
@@ -359,6 +358,7 @@ void ClangPluginASTVisitor::HandleCond(Stmt *S){
         Expr* expr = switchStmt -> getCond();
         //expr -> dump();
         string str = HelpVisitRightTree(expr);
+        str = HelpCutTheLastComma(str);
         output_data  << lineNum << "," << "cond" << "," << "SWITCH" << "," << "{}<-{" << str << "}" << ",　Key\n";
         llvm::errs() << lineNum << "," << "cond" << "," << "SWITCH" << "," << "{}<-{" << str << "}" << ",　Key\n";
     } else if(isa<DoStmt>(S)){
@@ -457,14 +457,14 @@ string ClangPluginASTVisitor::HelpGetDst(Expr* expr){
                     if(UO->isIncrementDecrementOp()){//一元操作结点,处理++类似的操作,说名左边是*(p++)
                         leftop +="*";
                         leftop += HelpHandleIncrementDecrementOp(UO,false,"");
-                        llvm::errs()<<"wrong\n";
+                        //llvm::errs()<<"wrong\n";
                         return leftop;
                     }
                 }
-                else if(isa<CompoundAssignOperator>(*(PE->child_begin()))){
-                    llvm::errs()<< "+=\n\n";
-                }
-                
+
+                else if(Expr *E = dyn_cast<Expr>(*(PE->child_begin()))){
+                    leftop += HelpGetDst(E);
+                }                
             }
             string star = "";
             while(isa<UnaryOperator>(expr)){//在这个循环中，说名是多层指针的情况
@@ -479,6 +479,11 @@ string ClangPluginASTVisitor::HelpGetDst(Expr* expr){
                 CallExpr *CE = dyn_cast<CallExpr>(*(UO->child_begin()));
                 leftop = HelpHandleFunctionCall(CE,false);
             }
+            else if(ImplicitCastExpr *ICE = dyn_cast<ImplicitCastExpr>(*(UO->child_begin()))){
+                if(Expr *E = dyn_cast<Expr>(*(ICE->child_begin()))){
+                    leftop += HelpGetDst(E);
+                }
+            }
         }
     }
 	else if(ArraySubscriptExpr *ASE = dyn_cast<ArraySubscriptExpr>(expr)){ //若赋值的结点是数组	
@@ -490,8 +495,15 @@ string ClangPluginASTVisitor::HelpGetDst(Expr* expr){
     }
     else if(ParenExpr *PE = dyn_cast<ParenExpr>(expr)){
         if(Expr *content = dyn_cast<Expr>(*(PE->child_begin()))){
-            leftop = HelpGetDst(content);
+            leftop += HelpGetDst(content);
         }
+    }
+    //else if(Expr *E = dyn_cast<Expr>(expr)){
+    //    leftop = HelpVisitRightTree(E);
+    //}
+    else if(BinaryOperator *BO = dyn_cast<BinaryOperator>(expr)){
+        Expr *leftChild = BO->getLHS();
+        leftop += HelpGetDst(leftChild);
     }
     else {
         llvm::errs()<< "Error: Dst Not Found\n";
@@ -633,7 +645,13 @@ string ClangPluginASTVisitor::HelpVisitRightTree(Expr * root){
                 Expr *expr = dyn_cast<Expr>(*(CSCE->child_begin()));
                 src += HelpVisitRightTree(expr);
             }
-        }        
+        }
+        else if(Expr *E = dyn_cast<Expr>(*(root->child_begin()))){
+            src += HelpVisitRightTree(E);
+        }
+        else if(isa<FloatingLiteral>(*(root->child_begin()))){
+            src += "ImmFloat,";
+        }
     }
     else if(isa<CallExpr>(root)){
         //llvm::errs()<<"Found a Function";
@@ -641,6 +659,9 @@ string ClangPluginASTVisitor::HelpVisitRightTree(Expr * root){
         //root->dump();
     }
     else if(isa<IntegerLiteral>(root)){
+        src += "Imm,";
+    }
+    else if(isa<PredefinedExpr>(root)){
         src += "Imm,";
     }
     else if(isa<UnaryOperator>(root)){
@@ -727,12 +748,14 @@ string ClangPluginASTVisitor::HelpVisitRightTree(Expr * root){
     else if(MemberExpr *MBE = dyn_cast<MemberExpr>(root)){
         src += HelpHandleMemberExpr(MBE);
     }
-
     else if(isa<StringLiteral>(root)){
-        src += "ImmStr";
+        src += "ImmStr,";
     }
     else if(isa<CharacterLiteral>(root)){
-        src += "ImmChar";
+        src += "ImmChar,";
+    }
+    else if(isa<FloatingLiteral>(root)){
+        src += "ImmFloat,";
     }
     else {
         llvm::errs()<< "Error:Src not Found!\n";
@@ -1264,8 +1287,8 @@ void ClangPluginASTVisitor::HelpHandleRecordDecl(Decl *D){
         fields += fieldName + "#"+ typeStr + ",";         
     }
     fields = HelpCutTheLastComma(fields);    
-    output_data << lineNum <<",Define,"<< type <<","<< name <<"Fields:"<< fields <<"\n";
-    llvm::errs()<< lineNum <<",Define,"<< type <<","<< name <<"Fields:"<< fields <<"\n";    
+    output_data << lineNum <<",Define,"<< type <<","<< name <<",Fields:"<< fields <<"\n";
+    llvm::errs()<< lineNum <<",Define,"<< type <<","<< name <<",Fields:"<< fields <<"\n";    
 }
 string ClangPluginASTVisitor::HelpCutTheLastComma(string src){
     if(src[src.size()-1]==',')
@@ -1287,16 +1310,25 @@ string ClangPluginASTVisitor::HelpHandleMemberExpr(MemberExpr *ME){//这个函�
         else if(MemberExpr *ME = dyn_cast<MemberExpr>(*(ICE->child_begin()))){//结构体嵌套的情况，需要递归
             baseName += HelpHandleMemberExpr(ME);
         }
-        
+        else if(ArraySubscriptExpr *ASE = dyn_cast<ArraySubscriptExpr>(*(ICE->child_begin()))){
+            baseName += HelpHandleArraySubsriptExpr(ASE);
+        }        
     }else if(MemberExpr *NME = dyn_cast<MemberExpr>(*(ME->child_begin()))){
         baseName += HelpHandleMemberExpr(NME);
     }else if(ArraySubscriptExpr *ASE = dyn_cast<ArraySubscriptExpr>(*(ME->child_begin()))){
         baseName += HelpHandleArraySubsriptExpr(ASE);
     }
+    else if(Expr *E = dyn_cast<Expr>(*(ME->child_begin()))){
+        baseName += HelpVisitRightTree(E);
+    }
+
+
     if(baseName==""){//空返回输出
+        llvm::errs()<< "\nError:Basename Not Found!\n";
         ME->dump();
     }
-    return baseName+"->"+memberName + ",";
+    baseName = HelpCutTheLastComma(baseName);
+    return baseName+"->"+memberName;// + ",";
 }
 string ClangPluginASTVisitor::HelpHandleIfStmt(IfStmt *ifStmt){//这个函数负责处理if语句，判断是否有else，将判断条件打印
     //output_data.open("testout.txt",ios::app);
