@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <set>
+#include <stdlib.h>
 #include "clang/Frontend/FrontendPluginRegistry.h"
 #include "clang/AST/AST.h"
 #include "clang/AST/ASTConsumer.h"
@@ -46,7 +47,13 @@ public:
         }
 		else if(isa<IfStmt>(S) || isa<ForStmt>(S) || isa<WhileStmt>(S) || isa<SwitchStmt>(S) || isa<DoStmt>(S)){ //条件判断及循环结点
             HandleCond(S);
-        }else{//其他情况
+        }
+        else if(isa<CompoundStmt>(S)){
+            //llvm::errs()<<"Found Compound\n";
+            //S->dump();
+        }
+        
+        else{//其他情况
             HandleOthers(S);
         }        
 		return true;
@@ -101,6 +108,7 @@ private:
     string HandleSafeType(Stmt *);
     string HelpGetDstSTUO(Expr *);
     string HelpGetSrcST(Expr *);
+    string HelpHandlePointer(Expr *);
 };
 
 
@@ -684,7 +692,11 @@ string ClangPluginASTVisitor::HelpVisitRightTree(Expr * root){
         else if(UO->getOpcode()==UO_LNot){//发现!操作
             if(Expr *expr = dyn_cast<Expr>(*(UO->child_begin())))
                 src += HelpVisitRightTree(expr);            
-        }else {
+        }
+        else if(StmtExpr *SE = dyn_cast<StmtExpr>(*(UO->child_begin()))){
+            src += HelpVisitRightTree(SE);
+        }
+        else {
             if(Expr *expr = dyn_cast<Expr>(*(UO->child_begin())))
                 src += HelpVisitRightTree(expr);
         }
@@ -757,9 +769,23 @@ string ClangPluginASTVisitor::HelpVisitRightTree(Expr * root){
     else if(isa<FloatingLiteral>(root)){
         src += "ImmFloat,";
     }
+    else if(isa<OpaqueValueExpr>(root)){
+        src = "Imm,";
+    }
+    else if(StmtExpr *SE = dyn_cast<StmtExpr>(root)){
+        if(CompoundStmt *CS = dyn_cast<CompoundStmt>(*(SE->child_begin()))){            
+            Stmt *S = CS ->body_back();
+            //E->dump() 
+            //llvm::errs()<<"\nNow Dump: \n";
+            if(Expr *E = dyn_cast<Expr>(S)){
+                src += HelpVisitRightTree(E);
+            }
+        }
+    }
     else {
-        llvm::errs()<< "Error:Src not Found!\n";
+        llvm::errs()<< "Error:Src not Found in Right Tree!\n";
         root->dump();
+        //while(1){}
     }
     return src;
 }
@@ -1142,24 +1168,53 @@ string  ClangPluginASTVisitor::HandleSafeType(Stmt *S){
             FullSourceLoc fsl = context->getFullLoc(BO->getLocStart());
             if (fsl.isValid()){             
                 Expr *exprl = BO->getLHS(); //获取左子树，即赋值的结点
+                Expr *exprr = BO->getRHS();
                 string dst;
                 if(DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(exprl)){
                     if(isa<PointerType>(DRE->getType())){ //若左边是指针变量，需要对右边进行判断
-                        Expr *exprr = BO->getRHS();
+                        //Expr *exprr = BO->getRHS();
                         if((isa<BinaryOperator>(exprr))||(isa<IntegerLiteral>(exprr))){//若右边为立即数或者运算则判断为非安全指针
+                            //llvm::errs()<<"thisis \n";
                             Stype = "unsafePointer  ";
+                        }
+                        else if(isa<ImplicitCastExpr>(exprr)){
+                        	if(isa<BinaryOperator>(*(exprr->child_begin())))
+                        		Stype = "unsafePointer  ";
                         }
                     }
                 }
                 else if(isa<UnaryOperator>(exprl)){//对于左边是一元操作的情况，判断是否为可变的写值
+                    Stype = HelpHandlePointer(exprl);
+                    if (Stype == "unsafePointer"){
+                        if((isa<BinaryOperator>(exprr))||(isa<IntegerLiteral>(exprr))){//若右边为立即数或者运算则判断为非安全指针
+                            //llvm::errs()<<"this \n";
+                            Stype = "unsafePointer  ";
+                        }
+                        else if(isa<ImplicitCastExpr>(exprr)){
+                        	if(isa<BinaryOperator>(*(exprr->child_begin())))
+                        		Stype = "unsafePointer  ";
+                        	else
+                        		Stype = "";
+                        }
+         		else
+         			Stype = "";
+                    }
                     Stypel = HelpGetDstSTUO(exprl);
                 }
-                string src;                
-                Expr *exprr = BO->getRHS();//获取右子树
+                else if(ArraySubscriptExpr *ASE = dyn_cast<ArraySubscriptExpr>(exprl)){
+                    if (Expr* Idx = ASE->getIdx()){
+                        if (isa<IntegerLiteral>(Idx)){//判断方括号中是不是变量
+                            Stypel = "";
+                        }
+                        else
+                            Stypel = "unsafeWrite   ";
+                    }
+                }
+                //string src;                
+                //Expr *exprr = BO->getRHS();//获取右子树
                 Styper = HelpGetSrcST(exprr);
                 if(Styper!="")
-                	Styper="unsafeRead";
-                //llvm::errs() << Stype<<Stypel<<Styper; 
+                    Styper="unsafeRead   ";
                 result+= Stype +Stypel+Styper;
             }
         }
@@ -1185,6 +1240,26 @@ string  ClangPluginASTVisitor::HandleSafeType(Stmt *S){
     //if((Stype!="") || (Stypel!="") || (Styper!=""))
     //    llvm::errs()<<"\n"; 
     return result;   
+}
+string ClangPluginASTVisitor::HelpHandlePointer(Expr* expr){
+    string Stype;
+    Expr* ex=(Expr*)(*(expr->child_begin()));
+    if(isa<PointerType>(ex->getType())){
+    	if(isa<ParenExpr>(ex))
+    		Stype = "";
+    	else{
+        	//llvm::errs()<<"this \n";
+        	Stype += "unsafePointer";
+        }
+    }
+    
+    if(isa<UnaryOperator>(ex)){
+        Stype += HelpHandlePointer(ex);
+        //llvm::errs()<<"this \n";
+    }
+    if(Stype != "")
+    	Stype = "unsafePointer";
+    return Stype;
 }
 string ClangPluginASTVisitor::HelpGetDstSTUO(Expr* expr){
     //这个函数用于获取赋值操作等号左边的标的数据
@@ -1213,9 +1288,20 @@ string ClangPluginASTVisitor::HelpGetDstSTUO(Expr* expr){
             }
         }
     }
-    //else if(ArraySubscriptExpr *ASE = dyn_cast<ArraySubscriptExpr>(expr)){ //若赋值的结点是数组  
-        //leftop = HelpHandleArraySubsriptExpr(ASE);
-    //}
+    else if(ArraySubscriptExpr *ASE = dyn_cast<ArraySubscriptExpr>(expr)){ //若赋值的结点是数组  
+        if (Expr* Idx = ASE->getIdx()){
+            if (isa<IntegerLiteral>(Idx)){
+            	Stypel ="";
+            }
+            else
+                Stypel = "unsafeWrite";
+            
+            //else
+            //    Stypel += HelpGetDstSTUO(Idx);
+        }
+    }
+    if(Stypel!="")
+        Stypel = "unsafeWrite   ";
     return Stypel;
 }
 string ClangPluginASTVisitor::HelpGetSrcST(Expr * root){
@@ -1251,9 +1337,15 @@ string ClangPluginASTVisitor::HelpGetSrcST(Expr * root){
                 }                
             }
         }
-        //if(ArraySubscriptExpr *ASE = dyn_cast<ArraySubscriptExpr>(*(root->child_begin()))){
-            //src += HelpHandleArraySubsriptExpr(ASE)+",";
-        //}
+        if(ArraySubscriptExpr *ASE = dyn_cast<ArraySubscriptExpr>(*(root->child_begin()))){ //对于数组的处理，判断括号内是不是变量
+            if (Expr* Idx = ASE->getIdx()){
+                if (isa<IntegerLiteral>(Idx)){
+                       Styper += "";
+                }
+                else
+                    Styper += "unsafeRead  ";
+            }
+        }
         if(ImplicitCastExpr *NICE = dyn_cast<ImplicitCastExpr>(*(root->child_begin()))){
             Styper += HelpGetSrcST(NICE);
         }        
@@ -1264,6 +1356,7 @@ string ClangPluginASTVisitor::HelpGetSrcST(Expr * root){
     }
     return Styper;
 }
+
 //===================================================================================================
 void ClangPluginASTVisitor::HelpHandleRecordDecl(Decl *D){
     unsigned int lineNum = ModGetDeclLine(D);
@@ -1312,7 +1405,11 @@ string ClangPluginASTVisitor::HelpHandleMemberExpr(MemberExpr *ME){//这个函�
         }
         else if(ArraySubscriptExpr *ASE = dyn_cast<ArraySubscriptExpr>(*(ICE->child_begin()))){
             baseName += HelpHandleArraySubsriptExpr(ASE);
-        }        
+        }
+        else if(ParenExpr *PE = dyn_cast<ParenExpr>(*(ICE->child_begin()))){
+            Expr *content = dyn_cast<Expr>(*(PE->child_begin()));
+            baseName += HelpVisitRightTree(content);
+        }    
     }else if(MemberExpr *NME = dyn_cast<MemberExpr>(*(ME->child_begin()))){
         baseName += HelpHandleMemberExpr(NME);
     }else if(ArraySubscriptExpr *ASE = dyn_cast<ArraySubscriptExpr>(*(ME->child_begin()))){
@@ -1322,10 +1419,10 @@ string ClangPluginASTVisitor::HelpHandleMemberExpr(MemberExpr *ME){//这个函�
         baseName += HelpVisitRightTree(E);
     }
 
-
     if(baseName==""){//空返回输出
         llvm::errs()<< "\nError:Basename Not Found!\n";
         ME->dump();
+        while(1){}
     }
     baseName = HelpCutTheLastComma(baseName);
     return baseName+"->"+memberName;// + ",";
