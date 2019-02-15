@@ -35,12 +35,14 @@ public:
 	}
 	bool VisitStmt(Stmt *S){
 		//对每个Stmt结点分析
+        //S->dump();
         if(isa<BinaryOperator>(S) || isa<UnaryOperator>(S)){ //操作结点
             //S->dump();
             HandleOp(S);                        
         }
         else if(isa<CallExpr>(S)){ //函数调用结点
             HandleCall(S);
+
         }
         else if(isa<ReturnStmt>(S)){ //函数返回结点
             HandleRet(S);
@@ -92,7 +94,7 @@ private:
     void HelpHandleRecordDecl(Decl*);
     string HelpCutTheLastComma(string);
     string HelpHandleMemberExpr(MemberExpr *); 
-
+    string HelpGetIndirectCallee(Expr *);
     string HelpHandleIfStmt(IfStmt *);
     ///////////////////////////
     // 添加函数声明：衣龙浩
@@ -143,16 +145,16 @@ void ClangPluginASTVisitor::HandleDefine(Decl *D){
                 string src = HelpVisitRightTree(init);
                 src = HelpCutTheLastComma(src);
                 string safeOrNot = HelpGetSrcST(init);
-                output_data << lineNum << ",op {" << varname  << "}<-{"<< src << "},"<< safeOrNot <<"\n";
-                llvm::errs()<< lineNum << ",op {" << varname  << "}<-{"<< src << "},"<< safeOrNot <<"\n";
+                output_data << lineNum << ",op,{" << varname  << "}<-{"<< src << "},"<< safeOrNot <<"\n";
+                llvm::errs()<< lineNum << ",op,{" << varname  << "}<-{"<< src << "},"<< safeOrNot <<"\n";
             }
             else if(isa<CallExpr>(init)){ //函数调用结点
                 HandleCall(init);
             }
             else if(isa<IntegerLiteral>(init)){//在这个判断条件中表示int i = 1                
                 string varname = HelpHandleVarDecl(varDecl);
-                output_data << lineNum << ",op {" << varname  << "}<-{imm}\n";          
-                llvm::errs()<< lineNum << ",op {" << varname  << "}<-{imm}\n";                
+                output_data << lineNum << ",op,{" << varname  << "}<-{imm}\n";          
+                llvm::errs()<< lineNum << ",op,{" << varname  << "}<-{imm}\n";                
             }
             else if(isa<ImplicitCastExpr>(init)){
                 //llvm::errs()<<"\nbug\n";
@@ -160,14 +162,14 @@ void ClangPluginASTVisitor::HandleDefine(Decl *D){
                 string sourcename = HelpVisitRightTree(init);
                 if(sourcename[sourcename.size()-1]==',')
                     sourcename = sourcename.substr(0,sourcename.size()-1);
-                output_data << lineNum << ",op {" << varname << "}<-{" << sourcename << "}\n";             
-                llvm::errs()<< lineNum << ",op {" << varname << "}<-{" << sourcename << "}\n";                
+                output_data << lineNum << ",op,{" << varname << "}<-{" << sourcename << "}\n";             
+                llvm::errs()<< lineNum << ",op,{" << varname << "}<-{" << sourcename << "}\n";                
             }
             else if(isa<InitListExpr>(init)){
                 //init->dump();
                 string varname = HelpHandleVarDecl(varDecl);
-                output_data << lineNum << ",op {" << varname  << "[]}<-{imm}\n";
-                llvm::errs()<< lineNum << ",op {" << varname  << "[]}<-{imm}\n";
+                output_data << lineNum << ",op,{" << varname  << "[]}<-{imm}\n";
+                llvm::errs()<< lineNum << ",op,{" << varname  << "[]}<-{imm}\n";
             }            
         }    
     }
@@ -218,6 +220,7 @@ void ClangPluginASTVisitor::HandleOp(Stmt *S){
     //S->dump();
     output_data.open("testout.txt",ios::app);
     string safeOrNot = HandleSafeType(S);
+    //string safeOrNot = "";
     if(CompoundAssignOperator *CO = dyn_cast<CompoundAssignOperator>(S)){
         HelpHandleCompoundAssignOperator(CO,true,safeOrNot);        
     }
@@ -236,7 +239,6 @@ void ClangPluginASTVisitor::HandleOp(Stmt *S){
                     exprl -> dump();
                 }
                 dst = HelpCutTheLastComma(dst);
-                output_data  <<  linenumber << ",op,{" << dst << "}<-{";
 			    llvm::errs() <<  linenumber << ",op,{" << dst << "}<-{";
 			    string src="";
                 Expr *exprr = BO->getRHS();//获取右子树
@@ -249,7 +251,7 @@ void ClangPluginASTVisitor::HandleOp(Stmt *S){
                     exprr -> dump();
                 }
                 src = HelpCutTheLastComma(src);
-                output_data  << src << "} "<< safeOrNot << "\n";
+                output_data << linenumber << ",op,{" << dst << "}<-{" << src << "} "<< safeOrNot << "\n";
                 llvm::errs() << src << "} "<< safeOrNot << "\n";
  		    }
 	    }
@@ -270,7 +272,9 @@ void ClangPluginASTVisitor::HandleCall(Stmt *S){//当前用于处理函数调用
     unsigned linenumber = fsl.getExpansionLineNumber();
     CallExpr *CE = dyn_cast<CallExpr>(S);
     //S->dump();
+    string calleeName="";
     string args="";
+    string safeOrnot = "";
     for(CallExpr::arg_iterator it = CE -> arg_begin(); it != CE -> arg_end(); ++it) {
         Expr* arg = *it;                
         args += HelpVisitRightTree(arg);//每一个参数都有可能是一个运算结果，需要进行树状分析 
@@ -280,22 +284,39 @@ void ClangPluginASTVisitor::HandleCall(Stmt *S){//当前用于处理函数调用
     if(FunctionDecl *FD = CE->getDirectCallee()){
         //FD->dump();
         directCallOrNot += "Direct,";
-        string functionName = FD->getNameAsString();
-        directCallOrNot +=  functionName;          
-        std::size_t found = localFunctionNameCollect.find(functionName);//在本地函数集合中查找函数名，如果没有找到则判定为库函数
-        if(found==std::string::npos){//判断是否为外部函数，但存在问题，如果对于多个源文件的情况是否使用还需验证
+        calleeName = FD->getNameAsString();
+        directCallOrNot +=  calleeName;          
+        std::size_t found = localFunctionNameCollect.find(calleeName);//在本地函数集合中查找函数名，如果没有找到则判定为库函数
+        if(found==std::string::npos){//判断是否为外部函数，但存在问题，如果对于多个源文件的情况是否使用还需验证（未找到）
             //llvm::errs()<<"\n not found\n";
             directCallOrNot += ",Libc,Key";
+            std::string checkfunW ("memcpy memmove memset strset strcpy strcat");
+            std::string checkfunR ("memcmp memchr strcmp strchr ");
+            std::size_t foundW = checkfunW.find(calleeName);
+            std::size_t foundR = checkfunR.find(calleeName);
+            if (foundW!= std::string::npos){
+                safeOrnot = "unsafeWrite unsafeRead";
+            }
+            if (foundR!= std::string::npos){
+                safeOrnot = "unsafeRead";
+            }
         }      
     }        
     else{
-        //S->dump();
-        directCallOrNot += "Indirect,Key";
+        Expr *INCALL = dyn_cast<Expr>(CE->getCallee());
+        //INCALL->dump();
+        
+        calleeName = HelpGetIndirectCallee(INCALL);
+       
+        directCallOrNot += "Indirect,Key,";
+        //calleeName = HelpCutTheLastComma(calleeName);
+        directCallOrNot += calleeName;
+        
     }
     if(args[args.size()-1]==',')
         args = args.substr(0,args.size()-1);
-    output_data <<linenumber<<",Call,"<< directCallOrNot << ",Para{"<<args<<"}\n";
-    llvm::errs()<<linenumber<<",Call,"<< directCallOrNot << ",Para{"<<args<<"}\n";
+    output_data <<linenumber<<",Call,"<< directCallOrNot << ",Para{"<<args<<"}"<<safeOrnot<<"\n";
+    llvm::errs()<<linenumber<<",Call,"<< directCallOrNot << ",Para{"<<args<<"}"<<safeOrnot<<"\n";
     output_data <<linenumber<< ",Call,Stack <- Address, Key\n";    
     llvm::errs()<<linenumber<< ",Call,Stack <- Address, Key\n";    
     output_data.close();    
@@ -407,13 +428,13 @@ string ClangPluginASTVisitor::HelpGetFunctionName(DeclRefExpr *e){//获取变量
         }
     }    
     if(D->isDefinedOutsideFunctionOrMethod()){
-        funname = "_Global_@";
+        funname = "_Global_";
     }
     else{
         DeclContext *DC = D->getParentFunctionOrMethod(); //获取作用范围的函数定义
         if(FunctionDecl *FD = dyn_cast<FunctionDecl>(DC)){
              //D->dump();
-             funname = FD->getNameAsString()+ "@" ;
+             funname = FD->getNameAsString();
         }//else return "notfound";
     }
     return funname;
@@ -425,9 +446,13 @@ string ClangPluginASTVisitor::HelpHandleDeclRefExpr(DeclRefExpr *e){
     funname = HelpGetFunctionName(e);    
     if(VarDecl *VD = dyn_cast<VarDecl>(VED)){
 		if(VD->hasGlobalStorage() && !VD->isStaticLocal()){
-			valname = funname + VD->getNameAsString();
-		}else{
-			valname = funname + VD->getNameAsString();            
+			valname = funname +"@"+ VD->getNameAsString();
+		}
+        else if(VD->isStaticLocal()){
+            valname = "_Global_@"+funname+"."+VD->getNameAsString();
+        }
+        else{
+			valname = funname + "@" + VD->getNameAsString();            
 	    }
 	}
     else if(isa<FunctionDecl>(VED)){
@@ -590,7 +615,7 @@ string ClangPluginASTVisitor::HelpVisitRightTree(Expr * root){
             }
             else if(UO->getOpcode()==UO_AddrOf){//关于这些判断条件，来源于Expr.cpp,在本判断条件之下，说名是取地址操作&,应当不存在二重取地址操作
                 if(DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(*(UO->child_begin()))){
-                    src += "&" + HelpHandleDeclRefExpr(DRE);
+                    src += "&" + HelpHandleDeclRefExpr(DRE) + ",";
                 }
             }
             if(UnaryOperator *NUO = dyn_cast<UnaryOperator>(*(UO->child_begin()))){
@@ -616,7 +641,7 @@ string ClangPluginASTVisitor::HelpVisitRightTree(Expr * root){
             src += HelpHandleFunctionCall(CE,false);
         }
         else if(isa<CharacterLiteral>(*(root->child_begin()))){
-            src += "ImmChar";
+            src += "ImmChar,";
         }
         else if(BinaryOperator *par = dyn_cast<BinaryOperator>(*(root->child_begin()))){
             //par->dump();
@@ -679,7 +704,7 @@ string ClangPluginASTVisitor::HelpVisitRightTree(Expr * root){
         }
         if(UO->getOpcode()==UO_AddrOf){//在普通的单操作中发现＆操作
             if(DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(*(UO->child_begin()))){
-                src += "&" + HelpHandleDeclRefExpr(DRE);
+                src += "&" + HelpVisitRightTree(DRE);
             }
             else if(ParenExpr *PE = dyn_cast<ParenExpr>(*(UO->child_begin()))){
                 Expr *content = dyn_cast<Expr>(*(PE->child_begin()));
@@ -755,7 +780,7 @@ string ClangPluginASTVisitor::HelpVisitRightTree(Expr * root){
         src += HelpVisitRightTree(rightChild);
     }
     else if(DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(root)){
-        src += HelpHandleDeclRefExpr(DRE);
+        src += HelpHandleDeclRefExpr(DRE)+",";
     }
     else if(MemberExpr *MBE = dyn_cast<MemberExpr>(root)){
         src += HelpHandleMemberExpr(MBE);
@@ -1184,21 +1209,7 @@ string  ClangPluginASTVisitor::HandleSafeType(Stmt *S){
                     }
                 }
                 else if(isa<UnaryOperator>(exprl)){//对于左边是一元操作的情况，判断是否为可变的写值
-                    Stype = HelpHandlePointer(exprl);
-                    if (Stype == "unsafePointer"){
-                        if((isa<BinaryOperator>(exprr))||(isa<IntegerLiteral>(exprr))){//若右边为立即数或者运算则判断为非安全指针
-                            //llvm::errs()<<"this \n";
-                            Stype = "unsafePointer  ";
-                        }
-                        else if(isa<ImplicitCastExpr>(exprr)){
-                        	if(isa<BinaryOperator>(*(exprr->child_begin())))
-                        		Stype = "unsafePointer  ";
-                        	else
-                        		Stype = "";
-                        }
-         		else
-         			Stype = "";
-                    }
+                   
                     Stypel = HelpGetDstSTUO(exprl);
                 }
                 else if(ArraySubscriptExpr *ASE = dyn_cast<ArraySubscriptExpr>(exprl)){
@@ -1433,6 +1444,7 @@ string ClangPluginASTVisitor::HelpHandleIfStmt(IfStmt *ifStmt){//这个函数负
     Expr* condition = ifStmt -> getCond();
     string conStr = "";
     conStr += HelpVisitRightTree(condition);
+    //condition->dump();
     if (conStr == "")//出现了if的判断条件不识别的情况
         condition->dump();
     conStr = HelpCutTheLastComma(conStr);
@@ -1445,4 +1457,21 @@ string ClangPluginASTVisitor::HelpHandleIfStmt(IfStmt *ifStmt){//这个函数负
     }
     //output_data.close();
     return "";
+}
+string ClangPluginASTVisitor::HelpGetIndirectCallee(Expr *caller){
+    string calleeName = "";
+    if(DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(caller)){
+        calleeName += HelpHandleDeclRefExpr(DRE) ;
+        return calleeName;
+    }
+    else if(isa<UnaryOperator>(caller)){
+        calleeName += "*";
+        Expr *NCE = dyn_cast<Expr>(*(caller->child_begin()));
+        calleeName += HelpGetIndirectCallee(NCE);
+    }    
+    else{
+        Expr *NCE = dyn_cast<Expr>(*(caller->child_begin()));
+        calleeName += HelpGetIndirectCallee(NCE);
+    }
+    return calleeName;
 }
